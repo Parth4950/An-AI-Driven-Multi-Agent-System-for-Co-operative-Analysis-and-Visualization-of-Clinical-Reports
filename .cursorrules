@@ -1,0 +1,15 @@
+# Clinical Summarization System — Project Rules
+
+## Output format
+
+- **All agents in this project MUST output their final data strictly as valid JSON.** No markdown code fences, no prose summaries as the primary deliverable. Output must be parseable JSON suitable for frontend visualization (e.g., doctor's dashboard).
+- Do not wrap JSON in markdown (e.g., avoid ```json ... ```). Emit raw JSON or ensure the pipeline exposes only JSON to downstream consumers.
+
+## Medical terminology
+
+- **Preserve all medical terminology accurately.** Do not oversimplify, generalize, or replace clinical terms with lay language. End-users are attending physicians and require precise, standard clinical vocabulary.
+- Keep diagnoses, medication names, lab names, and clinical concepts in their original or standard medical form (e.g., ICD codes, drug names, LOINC where applicable).
+
+## Scope
+
+These rules apply to the entire project: all agents, scripts, and outputs that contribute to the clinical summarization pipeline (e.g., processing MIMIC-IV discharge.csv.gz and producing diagnoses, A1C, blood pressure, medications, next steps) must adhere to the above.
