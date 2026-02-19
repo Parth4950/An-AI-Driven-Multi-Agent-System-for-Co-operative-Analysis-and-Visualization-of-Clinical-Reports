@@ -1,0 +1,34 @@
+[
+  {
+    "patient_id": "sample_001",
+    "diabetes": {
+      "type": "Type 2 diabetes mellitus",
+      "status": "active",
+      "a1c_values": ["7.2%", "7.8%"],
+      "glucose_values": ["142 mg/dL", "128 mg/dL"],
+      "medications": ["metformin 500 mg PO BID"]
+    },
+    "blood_pressure": {
+      "hypertension_status": "hypertensive",
+      "bp_readings": ["150/95 mmHg", "145/92 mmHg"],
+      "medications": ["lisinopril 10 mg daily"]
+    },
+    "abnormal_markers": []
+  },
+  {
+    "patient_id": "sample_002",
+    "diabetes": {
+      "type": "",
+      "status": "",
+      "a1c_values": [],
+      "glucose_values": [],
+      "medications": []
+    },
+    "blood_pressure": {
+      "hypertension_status": "normotensive",
+      "bp_readings": ["118/78 mmHg"],
+      "medications": []
+    },
+    "abnormal_markers": []
+  }
+]
