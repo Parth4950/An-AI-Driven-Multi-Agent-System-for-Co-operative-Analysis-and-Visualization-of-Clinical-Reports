@@ -13,9 +13,10 @@ venv/
 .venv/
 env/
 
-# Data (optional: uncomment if raw data should not be committed)
-# data/*.csv
-# data/*.gz
+# Data (MIMIC and derived outputs — do not commit)
+data/*.csv
+data/*.gz
+data/*.csv.gz
 
 # IDE and OS
 .idea/
