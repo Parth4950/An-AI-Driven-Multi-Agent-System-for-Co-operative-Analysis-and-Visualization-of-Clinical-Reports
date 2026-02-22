@@ -1,22 +1,6 @@
 [
   {
-    "patient_id": "sample_001",
-    "diabetes": {
-      "type": "Type 2 diabetes mellitus",
-      "status": "active",
-      "a1c_values": ["7.2%", "7.8%"],
-      "glucose_values": ["142 mg/dL"],
-      "medications": ["metformin 500 mg PO BID"]
-    },
-    "blood_pressure": {
-      "hypertension_status": "hypertensive",
-      "bp_readings": ["150/95 mmHg", "145/92 mmHg"],
-      "medications": ["lisinopril 10 mg daily"]
-    },
-    "abnormal_markers": []
-  },
-  {
-    "patient_id": "sample_002",
+    "patient_id": "10000032",
     "diabetes": {
       "type": "",
       "status": "",
@@ -25,10 +9,102 @@
       "medications": []
     },
     "blood_pressure": {
-      "hypertension_status": "normotensive",
-      "bp_readings": ["118/78 mmHg"],
+      "hypertension_status": "",
+      "bp_readings": [],
+      "medications": []
+    },
+    "abnormal_markers": [
+      "GLUCOSE-109*"
+    ]
+  },
+  {
+    "patient_id": "10000764",
+    "diabetes": {
+      "type": "",
+      "status": "",
+      "a1c_values": [],
+      "glucose_values": [],
+      "medications": []
+    },
+    "blood_pressure": {
+      "hypertension_status": "Hypertension",
+      "bp_readings": [
+        "125/55",
+        "140/77",
+        "142/65"
+      ],
+      "medications": [
+        "metoprolol tartrate"
+      ]
+    },
+    "abnormal_markers": [
+      "Glucose-104*",
+      "Glucose-159*"
+    ]
+  },
+  {
+    "patient_id": "10000826",
+    "diabetes": {
+      "type": "",
+      "status": "",
+      "a1c_values": [],
+      "glucose_values": [],
+      "medications": []
+    },
+    "blood_pressure": {
+      "hypertension_status": "",
+      "bp_readings": [],
+      "medications": []
+    },
+    "abnormal_markers": [
+      "Glucose-101*",
+      "Glucose-105*",
+      "Glucose-113*",
+      "Glucose-125*",
+      "Glucose-141*",
+      "Glucose-156*"
+    ]
+  },
+  {
+    "patient_id": "10000826",
+    "diabetes": {
+      "type": "",
+      "status": "",
+      "a1c_values": [],
+      "glucose_values": [],
+      "medications": []
+    },
+    "blood_pressure": {
+      "hypertension_status": "",
+      "bp_readings": [],
       "medications": []
     },
     "abnormal_markers": []
+  },
+  {
+    "patient_id": "10000980",
+    "diabetes": {
+      "type": "",
+      "status": "active",
+      "a1c_values": [
+        "8.1"
+      ],
+      "glucose_values": [
+        "138",
+        "150"
+      ],
+      "medications": [
+        "insulin nph & regular human"
+      ]
+    },
+    "blood_pressure": {
+      "hypertension_status": "",
+      "bp_readings": [],
+      "medications": []
+    },
+    "abnormal_markers": [
+      "Glucose-138*",
+      "Glucose-150*"
+    ]
   }
 ]

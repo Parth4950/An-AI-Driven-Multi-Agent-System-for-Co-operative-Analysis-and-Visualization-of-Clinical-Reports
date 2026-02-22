@@ -1,16 +1,17 @@
 """
-CrewAI tasks for clinical extraction.
+CrewAI tasks for clinical extraction and JSON repair.
 """
 
 from crewai import Task
 
-from config.schema import EXTRACTION_SCHEMA
 from src.agents import get_extractor_agent
 
-# Expected output: strict raw JSON only (injected into task description)
+JSON_GUARDRAIL_TOP = "Output a single JSON object. No markdown, no backticks, no explanations. Required keys present; empty string or [] when not found."
+
 EXPECTED_JSON_INSTRUCTION = (
-    "Your response must be STRICT RAW JSON only. No explanations. No markdown. No text outside JSON. "
-    f"Use exactly this schema: {EXTRACTION_SCHEMA}"
+    "Extract only explicitly stated diabetes and hypertension facts. "
+    "Output one JSON object with keys: patient_id, diabetes, blood_pressure, abnormal_markers. "
+    "Use empty string or empty array when not found."
 )
 
 
@@ -19,18 +20,28 @@ def extraction_task(patient_id: str, note_text: str) -> Task:
     agent = get_extractor_agent()
     return Task(
         description=(
-            "Extract diabetes and blood pressure data from this discharge note. "
-            "Preserve all medical terminology exactly as written. "
-            "Return only valid JSON with the exact schema: patient_id (use provided id), diabetes (type, status, a1c_values, glucose_values, medications), "
-            "blood_pressure (hypertension_status, bp_readings, medications), abnormal_markers. "
-            "Use empty string or empty array when a value is not found.\n\n"
-            f"patient_id to use: {patient_id}\n\n"
-            "Discharge note:\n"
-            "---\n"
-            f"{note_text}\n"
-            "---\n\n"
+            JSON_GUARDRAIL_TOP + "\n\n"
+            "From the discharge note below, extract only explicitly stated diabetes and blood pressure data.\n\n"
+            "Discharge note:\n---\n"
+            f"{note_text}\n---\n\n"
             + EXPECTED_JSON_INSTRUCTION
         ),
-        expected_output="Valid JSON object only, no markdown or extra text.",
+        expected_output="Single JSON object. No markdown or backticks.",
+        agent=agent,
+    )
+
+
+def repair_json_task(broken_json: str) -> Task:
+    """Create a Task that fixes invalid JSON without changing values. One-shot repair."""
+    agent = get_extractor_agent()
+    return Task(
+        description=(
+            JSON_GUARDRAIL_TOP + "\n\n"
+            "Fix the following JSON to be strictly valid. Do not change values.\n\n"
+            "Broken JSON:\n---\n"
+            f"{broken_json}\n---\n\n"
+            "Return only the corrected JSON object, no other text."
+        ),
+        expected_output="Valid JSON object only.",
         agent=agent,
     )

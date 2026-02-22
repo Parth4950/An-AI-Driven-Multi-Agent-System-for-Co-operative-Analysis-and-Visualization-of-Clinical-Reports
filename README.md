@@ -20,7 +20,7 @@ Multi-agent clinical summarization pipeline using CrewAI: processes MIMIC-IV dis
 ## Usage
 
 - **Filter notes:** `python src/data_filter.py` — filters discharge notes containing diabetes/hypertension/A1C mentions to `data/filtered_discharge_notes.csv`.
-- **Run extraction:** `python src/main.py` — runs the Extractor agent on filtered notes and writes `data/extraction_results.json`.
+- **Run extraction:** `python src/main.py` — runs the Extractor agent on filtered notes and writes `data/extraction_results.json`. Set `DRY_RUN=true` in `.env` to use mock JSON (no API calls, no billing).
 - **Validate:** `python src/validate_extraction.py` — compares `data/extraction_results.json` to `data/gold_standard.json` and prints accuracy/recall metrics.
 
 ## Project structure
@@ -28,3 +28,7 @@ Multi-agent clinical summarization pipeline using CrewAI: processes MIMIC-IV dis
 - `config/` — settings and extraction schema
 - `src/` — agents, tasks, extraction runner, data filter, validation script
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files are gitignored)
+
+## Repository
+
+- **GitHub:** [An-AI-Driven-Multi-Agent-System-for-Co-operative-Analysis-and-Visualization-of-Clinical-Reports](https://github.com/Parth4950/An-AI-Driven-Multi-Agent-System-for-Co-operative-Analysis-and-Visualization-of-Clinical-Reports) — CrewAI + LangChain backend for MIMIC-IV discharge summaries; extracts A1C, blood pressure, and medications into structured JSON for EHR dashboards.

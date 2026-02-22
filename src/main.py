@@ -1,14 +1,12 @@
 """
 Entry point: load first 5 rows from filtered_discharge_notes.csv,
 run CrewAI extractor on each note, validate JSON, and handle errors.
-Retries on Gemini 429 (quota) with backoff.
+429 and quota handling in run_extraction; DRY_RUN for mock mode without billing.
 """
 
 import json
 import logging
-import re
 import sys
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -18,14 +16,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from config.settings import FILTERED_NOTES_PATH, validate_settings
+from config.settings import DRY_RUN, FILTERED_NOTES_PATH, validate_settings
 from src.extraction import run_extraction
-
-# Retry on 429 (quota): wait seconds suggested by API or default, then retry
-MAX_429_RETRIES = 3
-DEFAULT_429_WAIT_SEC = 32
-# Pattern to parse "Please retry in 31.98s" from Gemini error
-RETRY_AFTER_PATTERN = re.compile(r"[Rr]etry in (\d+(?:\.\d+)?)\s*s", re.IGNORECASE)
+from src.validator import empty_schema, validate_extraction_output
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,6 +27,18 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
+
+
+def _is_429_error(e: Exception) -> bool:
+    """True if exception is 429 / quota (suppress stack trace for expected quota errors)."""
+    s = str(e)
+    return "429" in s or "RESOURCE_EXHAUSTED" in s or "quota" in s.lower()
+
+
+def _is_404_model_error(e: Exception) -> bool:
+    """True if exception is 404 / model not available (suppress stack for expected API errors)."""
+    s = str(e)
+    return "404" in s or "NOT_FOUND" in s or "no longer available" in s
 
 MAX_ROWS = 5
 TEXT_COLUMN = "text"
@@ -50,6 +55,8 @@ def _get_patient_id(row: pd.Series, index: int) -> str:
 
 def main() -> None:
     validate_settings()
+    if DRY_RUN:
+        logger.info("DRY_RUN=true: mock extraction (no Gemini API calls)")
 
     if not FILTERED_NOTES_PATH.exists():
         raise FileNotFoundError(
@@ -69,66 +76,24 @@ def main() -> None:
         if pd.isna(note_text) or not str(note_text).strip():
             logger.warning("Row %s: empty note, skipping", idx)
             continue
-        last_error = None
-        for attempt in range(MAX_429_RETRIES + 1):
-            try:
-                out = run_extraction(patient_id=patient_id, note_text=str(note_text))
-                results.append(out)
-                logger.info("Extraction OK for patient_id=%s", patient_id)
-                break
-            except (ValueError, json.JSONDecodeError) as e:
-                logger.exception("Extraction failed for patient_id=%s: %s", patient_id, e)
-                results.append(
-                    {
-                        "patient_id": patient_id,
-                        "error": str(e),
-                        "diabetes": {},
-                        "blood_pressure": {},
-                        "abnormal_markers": [],
-                    }
-                )
-                break
-            except Exception as e:
-                err_str = str(e)
-                is_429 = "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower()
-                if is_429 and attempt < MAX_429_RETRIES:
-                    match = RETRY_AFTER_PATTERN.search(err_str)
-                    wait_sec = float(match.group(1)) if match else DEFAULT_429_WAIT_SEC
-                    wait_sec = min(wait_sec, 120)
-                    logger.warning(
-                        "Gemini 429 (quota). Waiting %.0fs then retry %d/%d for patient_id=%s",
-                        wait_sec, attempt + 1, MAX_429_RETRIES, patient_id,
-                    )
-                    time.sleep(wait_sec)
-                    last_error = e
-                    continue
-                last_error = e
-                logger.exception("Extraction failed for patient_id=%s: %s", patient_id, e)
-                results.append(
-                    {
-                        "patient_id": patient_id,
-                        "error": str(e),
-                        "diabetes": {},
-                        "blood_pressure": {},
-                        "abnormal_markers": [],
-                    }
-                )
-                break
-        else:
-            if last_error is not None:
-                logger.exception(
-                    "Extraction failed for patient_id=%s after %d quota retries: %s",
-                    patient_id, MAX_429_RETRIES, last_error,
-                )
-                results.append(
-                    {
-                        "patient_id": patient_id,
-                        "error": str(last_error),
-                        "diabetes": {},
-                        "blood_pressure": {},
-                        "abnormal_markers": [],
-                    }
-                )
+        try:
+            out = run_extraction(patient_id=patient_id, note_text=str(note_text))
+            out = validate_extraction_output(out, verbose=True)
+            results.append(out)
+            if "error" not in out:
+                logger.info("patient_id=%s OK", patient_id)
+            else:
+                logger.warning("patient_id=%s error: %s", patient_id, out.get("error"))
+        except (ValueError, json.JSONDecodeError, Exception) as e:
+            if _is_429_error(e):
+                logger.error("patient_id=%s 429/quota: %s", patient_id, str(e))
+            elif _is_404_model_error(e):
+                logger.error("patient_id=%s model 404/unavailable: %s", patient_id, str(e))
+            else:
+                logger.exception("patient_id=%s failed: %s", patient_id, e)
+            # Only validated JSON is written: use full empty schema + error, then validate
+            error_payload = {**empty_schema(patient_id), "error": str(e)}
+            results.append(validate_extraction_output(error_payload, verbose=True))
 
     # Optionally write results to data/ (e.g. extraction_results.json)
     out_path = _PROJECT_ROOT / "data" / "extraction_results.json"

@@ -18,6 +18,9 @@ data/*.csv
 data/*.gz
 data/*.csv.gz
 
+# Cursor
+.cursorrules
+
 # IDE and OS
 .idea/
 .vscode/
