@@ -5,7 +5,7 @@ CrewAI tasks for clinical extraction and JSON repair.
 import json
 from crewai import Task
 
-from src.agents import get_extractor_agent, get_risk_analyzer_agent
+from src.agents import get_extractor_agent, get_risk_analyzer_agent, get_summarizer_agent
 
 JSON_GUARDRAIL_TOP = "Output a single JSON object. No markdown, no backticks, no explanations. Required keys present; empty string or [] when not found."
 
@@ -64,5 +64,30 @@ def risk_analysis_task(extraction_json: dict) -> Task:
             f"{json_str}\n---"
         ),
         expected_output="Single JSON object with summary, risk insights, supporting_evidence, confidence_level.",
+        agent=agent,
+    )
+
+
+def summarizer_task(extraction_json: dict, risk_analysis_json: dict) -> Task:
+    """Create a Task for Agent 3: summarize extraction + risk analysis into doctor/patient summaries and flags."""
+    agent = get_summarizer_agent()
+    input_obj = {"extraction": extraction_json, "risk_analysis": risk_analysis_json}
+    json_str = json.dumps(input_obj, indent=2)
+    return Task(
+        description=(
+            "You are Agent 3: Clinical Summarizer.\n\n"
+            "Input: two JSON objects — extraction (Agent 1) and risk_analysis (Agent 2).\n"
+            "Do NOT extract new facts, infer diagnoses, add risks not in Agent 2, give treatment advice, "
+            "modify numeric values, or contradict earlier agents. If info is missing, state unavailable.\n"
+            "Output ONE JSON object with keys: doctor_summary, patient_summary, key_flags, data_gaps.\n"
+            "doctor_summary: clinical tone; diabetes/BP status and risks; labs/vitals/meds only if present.\n"
+            "patient_summary: simple language; what was found and why follow-up may be needed; no medical advice.\n"
+            "key_flags: short labels only, ONLY if supported by Agent 2.\n"
+            "data_gaps: missing but clinically relevant info.\n"
+            "No markdown. No extra keys. Valid JSON only.\n\n"
+            "Input:\n---\n"
+            f"{json_str}\n---"
+        ),
+        expected_output="Single JSON object with doctor_summary, patient_summary, key_flags, data_gaps.",
         agent=agent,
     )

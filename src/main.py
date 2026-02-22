@@ -19,6 +19,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 from config.settings import DRY_RUN, FILTERED_NOTES_PATH, validate_settings
 from src.extraction import run_extraction
 from src.risk_analysis import run_risk_analysis
+from src.summarizer import run_summarization
 from src.validator import empty_schema, validate_extraction_output
 
 logging.basicConfig(
@@ -121,6 +122,19 @@ def main() -> None:
     with open(risk_path, "w", encoding="utf-8") as f:
         json.dump(risk_results, f, indent=2, ensure_ascii=False)
     logger.info("Wrote %d risk insights to %s", len(risk_results), risk_path)
+
+    # Agent 3: summarizer on each (extraction, risk_insight) pair (same order)
+    summary_results = []
+    for i, r in enumerate(results):
+        pid = r.get("patient_id", "")
+        risk = risk_results[i] if i < len(risk_results) else {}
+        risk_for_agent = {k: v for k, v in risk.items() if k != "patient_id"}
+        summary = run_summarization(r, risk_for_agent)
+        summary_results.append({"patient_id": pid, **summary})
+    summary_path = _PROJECT_ROOT / "data" / "summaries.json"
+    with open(summary_path, "w", encoding="utf-8") as f:
+        json.dump(summary_results, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d summaries to %s", len(summary_results), summary_path)
 
 
 if __name__ == "__main__":

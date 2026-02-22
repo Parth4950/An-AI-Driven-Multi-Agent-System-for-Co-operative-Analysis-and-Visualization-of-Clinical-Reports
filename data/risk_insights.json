@@ -1,17 +1,16 @@
 [
   {
     "patient_id": "10000032",
-    "summary": "Patient exhibits an elevated glucose level of 109 mg/dL. Current diabetes and hypertension statuses are not specified, and no blood pressure readings or related medications are provided.",
+    "summary": "The patient exhibits an elevated glucose level of 109 mg/dL. Blood pressure status and other metabolic parameters are not available for assessment.",
     "diabetes_risk_insights": [
-      "The elevated glucose level of 109 mg/dL suggests a potential risk for prediabetes or progression to type 2 diabetes.",
-      "Absence of A1c values prevents comprehensive assessment of long-term glycemic control."
+      "The observed glucose level of 109 mg/dL suggests a potential risk for prediabetes or future progression to type 2 diabetes."
     ],
     "hypertension_risk_insights": [
-      "Insufficient data to assess hypertension risk or status due to absence of blood pressure readings and hypertension status."
+      "Insufficient data to assess hypertension risk."
     ],
     "supporting_evidence": {
       "labs": [
-        "Glucose 109 mg/dL (abnormal marker)"
+        "GLUCOSE-109*"
       ],
       "vitals": [],
       "medications": []
@@ -20,14 +19,15 @@
   },
   {
     "patient_id": "10000764",
-    "summary": "The patient is diagnosed with hypertension and has recent blood pressure readings indicating suboptimal control. Metabolic status shows two elevated glucose readings.",
+    "summary": "The patient has a history of hypertension with recent elevated blood pressure readings (140/77, 142/65) despite being on metoprolol tartrate. The patient also presents with elevated glucose levels (104 mg/dL, 159 mg/dL).",
     "diabetes_risk_insights": [
-      "Two noted abnormal glucose values (104 mg/dL and 159 mg/dL) indicate impaired glucose regulation, raising risk for prediabetes or diabetes.",
-      "Absence of A1c values prevents assessment of long-term glycemic control."
+      "Elevated glucose readings (104 mg/dL, 159 mg/dL) suggest impaired glucose metabolism or potential prediabetes/undiagnosed diabetes.",
+      "Absence of A1c values and full glucose history limits a complete diabetes status assessment but indicates a need for further evaluation."
     ],
     "hypertension_risk_insights": [
-      "The patient is diagnosed with hypertension and is on metoprolol tartrate, but two of three recent BP readings (140/77 mmHg, 142/65 mmHg) are in the Stage 1 hypertension range, suggesting inadequate blood pressure control.",
-      "Persistent elevated blood pressure increases the risk for cardiovascular complications."
+      "Persistent elevated blood pressure readings (140/77, 142/65) indicate potentially uncontrolled hypertension despite metoprolol tartrate therapy.",
+      "Uncontrolled hypertension increases the risk for cardiovascular and renal complications.",
+      "Variable metoprolol tartrate dosing may reflect ongoing challenges in achieving blood pressure control."
     ],
     "supporting_evidence": {
       "labs": [
@@ -35,30 +35,32 @@
         "Glucose-159*"
       ],
       "vitals": [
-        "Hypertension status: Hypertension",
-        "BP readings: 125/55",
-        "BP readings: 140/77",
-        "BP readings: 142/65"
+        "125/55",
+        "140/77",
+        "142/65"
       ],
       "medications": [
-        "metoprolol tartrate 50 mg",
-        "metoprolol tartrate 75 mg"
+        "metoprolol tartrate 50 mg po tid",
+        "metoprolol tartrate 50mg",
+        "metoprolol tartrate 75 mg po tid"
       ]
     },
     "confidence_level": "high"
   },
   {
     "patient_id": "10000826",
-    "summary": "The patient presents with multiple elevated glucose readings, with values ranging from pre-diabetic to diabetic levels. There is no available information regarding the patient's blood pressure status, A1c values, or current medications for diabetes or hypertension.",
+    "summary": "The patient exhibits impaired glucose regulation based on multiple elevated glucose readings. No A1c values or blood pressure status are available for review.",
     "diabetes_risk_insights": [
-      "Persistent elevated glucose values, including readings consistent with pre-diabetes (101, 105, 113, 125 mg/dL) and diabetes (141, 156 mg/dL), indicate a high risk for progression to or undiagnosed type 2 diabetes.",
-      "The presence of multiple abnormal glucose markers suggests impaired glucose regulation requiring further evaluation."
+      "Multiple glucose readings are elevated, ranging from 100 mg/dL to 156 mg/dL, with several marked as abnormal.",
+      "The elevated glucose values, including 141 mg/dL and 156 mg/dL, indicate a risk of pre-diabetes or progression to type 2 diabetes.",
+      "Absence of A1c values limits the comprehensive assessment of long-term glycemic control."
     ],
     "hypertension_risk_insights": [
-      "Insufficient data to assess hypertension risk."
+      "Insufficient data to assess hypertension status or related risks."
     ],
     "supporting_evidence": {
       "labs": [
+        "Glucose-100",
         "Glucose-101*",
         "Glucose-105*",
         "Glucose-113*",
@@ -73,12 +75,12 @@
   },
   {
     "patient_id": "10000826",
-    "summary": "Insufficient data to determine current metabolic or blood pressure status.",
+    "summary": "Insufficient data available to determine the patient's current metabolic and blood pressure status.",
     "diabetes_risk_insights": [
-      "Insufficient data to assess diabetes progression risk."
+      "Insufficient data to identify diabetes progression risks."
     ],
     "hypertension_risk_insights": [
-      "Insufficient data to assess hypertension complications risk."
+      "Insufficient data to identify hypertension complication risks."
     ],
     "supporting_evidence": {
       "labs": [],
@@ -89,31 +91,31 @@
   },
   {
     "patient_id": "10000980",
-    "summary": "The patient has active diabetes with poor glycemic control, evidenced by an A1c of 8.1% and elevated glucose levels of 138 and 150. The patient is also experiencing hypertensive urgency with a blood pressure reading of 200/103 despite being on multiple antihypertensive medications.",
+    "summary": "Patient exhibits active diabetes with poor glycemic control, evidenced by an A1c of 8.1% and elevated glucose levels of 138 mg/dL and 150 mg/dL. Severe hypertension is present, classified as hypertensive urgency, with a critical blood pressure reading of 200/103 mmHg.",
     "diabetes_risk_insights": [
-      "Poor glycemic control with A1c 8.1% indicates increased risk of diabetes progression and complications.",
-      "Elevated glucose values (138, 150) despite insulin therapy suggest inadequate blood glucose management or insulin regimen effectiveness.",
-      "Existing insulin therapy indicates established diabetes requiring pharmacologic management."
+      "Poor glycemic control, indicated by A1c of 8.1% and elevated glucose values, increases the risk of diabetes-related microvascular and macrovascular complications.",
+      "Despite current insulin therapy, blood glucose levels remain high, suggesting inadequate therapeutic response or increasing insulin resistance/demand."
     ],
     "hypertension_risk_insights": [
-      "Hypertensive urgency (BP 200/103) presents an acute risk for end-organ damage and cardiovascular events.",
-      "Current blood pressure is uncontrolled despite a regimen of six antihypertensive medications (atenolol, clonidine, furosemide, hydrochlorothiazide, lisinopril, nifedipine), indicating refractory hypertension or non-adherence.",
-      "The severe elevation in blood pressure increases immediate and long-term risks for cardiovascular, cerebrovascular, and renal complications."
+      "The hypertensive urgency, with a blood pressure of 200/103 mmHg, poses an immediate high risk of acute end-organ damage, including cardiac, renal, and cerebrovascular events.",
+      "The patient is on multiple antihypertensive medications, yet blood pressure remains critically elevated, indicating potential resistant hypertension or challenges with medication efficacy/adherence."
     ],
     "supporting_evidence": {
       "labs": [
-        "A1c: 8.1",
-        "Glucose: 138",
-        "Glucose: 150"
+        "A1c: 8.1%",
+        "Glucose: 138 mg/dL",
+        "Glucose: 150 mg/dL"
       ],
       "vitals": [
-        "BP: 200/103"
+        "BP: 200/103 mmHg"
       ],
       "medications": [
+        "insulin",
         "insulin nph & regular human",
         "atenolol",
         "clonidine",
         "furosemide",
+        "hydralazine",
         "hydrochlorothiazide",
         "lisinopril",
         "nifedipine"

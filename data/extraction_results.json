@@ -14,7 +14,7 @@
       "medications": []
     },
     "abnormal_markers": [
-      "Glucose-109*"
+      "GLUCOSE-109*"
     ]
   },
   {
@@ -34,8 +34,9 @@
         "142/65"
       ],
       "medications": [
-        "metoprolol tartrate 50 mg",
-        "metoprolol tartrate 75 mg"
+        "metoprolol tartrate 50 mg po tid",
+        "metoprolol tartrate 50mg",
+        "metoprolol tartrate 75 mg po tid"
       ]
     },
     "abnormal_markers": [
@@ -58,6 +59,7 @@
       "medications": []
     },
     "abnormal_markers": [
+      "Glucose-100",
       "Glucose-101*",
       "Glucose-105*",
       "Glucose-113*",
@@ -95,6 +97,7 @@
         "150"
       ],
       "medications": [
+        "insulin",
         "insulin nph & regular human"
       ]
     },
@@ -107,6 +110,7 @@
         "atenolol",
         "clonidine",
         "furosemide",
+        "hydralazine",
         "hydrochlorothiazide",
         "lisinopril",
         "nifedipine"

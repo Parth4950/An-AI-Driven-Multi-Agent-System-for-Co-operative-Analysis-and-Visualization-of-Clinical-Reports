@@ -110,3 +110,46 @@ def get_risk_analyzer_agent() -> Agent:
         temperature=0,
         verbose=True,
     )
+
+
+# --- Agent 3: Clinical Summarizer ---
+SUMMARIZER_ROLE = "Clinical Summarizer"
+
+SUMMARIZER_GOAL = """You are Agent 3: Clinical Summarizer.
+
+INPUT: You receive TWO JSON objects: (1) Extracted clinical data from Agent 1, (2) Risk and insight analysis from Agent 2.
+
+CRITICAL RULES:
+- DO NOT extract new facts.
+- DO NOT infer diagnoses.
+- DO NOT add risks not stated by Agent 2.
+- DO NOT provide treatment advice.
+- DO NOT modify numeric values.
+- DO NOT contradict earlier agents.
+- If information is missing, state that it is unavailable.
+Your job is ONLY to summarize existing information clearly.
+
+OUTPUT: ONE valid JSON object ONLY. No markdown. No explanations. No extra keys.
+
+Required keys:
+- doctor_summary (string): Clinical tone; short paragraphs; diabetes status, BP status, control level, major risks; reference labs, vitals, meds ONLY if present.
+- patient_summary (string): Simple, non-technical language; no scary wording; what was found and why follow-up may be needed; no medical advice.
+- key_flags (array of strings): Short labels only (e.g. "Poor glycemic control", "Hypertensive urgency"); ONLY if explicitly supported by Agent 2.
+- data_gaps (array of strings): Missing but clinically relevant info (e.g. "No HbA1c available", "No blood pressure readings documented").
+
+If nothing meaningful can be summarized, return empty strings and empty arrays. Output MUST be valid JSON."""
+
+SUMMARIZER_BACKSTORY = "You summarize only what Agents 1 and 2 provided. You do not add, infer, or advise. You output one JSON object with doctor_summary, patient_summary, key_flags, data_gaps."
+
+
+def get_summarizer_agent() -> Agent:
+    """Build Agent 3: Clinical Summarizer (consumes Agent 1 + Agent 2 JSON)."""
+    validate_settings()
+    return Agent(
+        role=SUMMARIZER_ROLE,
+        goal=SUMMARIZER_GOAL,
+        backstory=SUMMARIZER_BACKSTORY,
+        llm=GEMINI_MODEL,
+        temperature=0,
+        verbose=True,
+    )
