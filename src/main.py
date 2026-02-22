@@ -18,6 +18,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from config.settings import DRY_RUN, FILTERED_NOTES_PATH, validate_settings
 from src.extraction import run_extraction
+from src.risk_analysis import run_risk_analysis
 from src.validator import empty_schema, validate_extraction_output
 
 logging.basicConfig(
@@ -95,11 +96,31 @@ def main() -> None:
             error_payload = {**empty_schema(patient_id), "error": str(e)}
             results.append(validate_extraction_output(error_payload, verbose=True))
 
-    # Optionally write results to data/ (e.g. extraction_results.json)
     out_path = _PROJECT_ROOT / "data" / "extraction_results.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     logger.info("Wrote %d results to %s", len(results), out_path)
+
+    # Agent 2: risk analysis on each validated result (same order; error results get default low-confidence insight)
+    risk_results = []
+    for r in results:
+        pid = r.get("patient_id", "")
+        if "error" in r:
+            risk_results.append({
+                "patient_id": pid,
+                "summary": "Insufficient data.",
+                "diabetes_risk_insights": [],
+                "hypertension_risk_insights": [],
+                "supporting_evidence": {"labs": [], "vitals": [], "medications": []},
+                "confidence_level": "low",
+            })
+        else:
+            insight = run_risk_analysis(r)
+            risk_results.append({"patient_id": pid, **insight})
+    risk_path = _PROJECT_ROOT / "data" / "risk_insights.json"
+    with open(risk_path, "w", encoding="utf-8") as f:
+        json.dump(risk_results, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d risk insights to %s", len(risk_results), risk_path)
 
 
 if __name__ == "__main__":

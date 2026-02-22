@@ -14,7 +14,7 @@
       "medications": []
     },
     "abnormal_markers": [
-      "GLUCOSE-109*"
+      "Glucose-109*"
     ]
   },
   {
@@ -34,7 +34,8 @@
         "142/65"
       ],
       "medications": [
-        "metoprolol tartrate"
+        "metoprolol tartrate 50 mg",
+        "metoprolol tartrate 75 mg"
       ]
     },
     "abnormal_markers": [
@@ -98,9 +99,18 @@
       ]
     },
     "blood_pressure": {
-      "hypertension_status": "",
-      "bp_readings": [],
-      "medications": []
+      "hypertension_status": "Hypertensive urgency",
+      "bp_readings": [
+        "200/103"
+      ],
+      "medications": [
+        "atenolol",
+        "clonidine",
+        "furosemide",
+        "hydrochlorothiazide",
+        "lisinopril",
+        "nifedipine"
+      ]
     },
     "abnormal_markers": [
       "Glucose-138*",

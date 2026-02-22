@@ -67,3 +67,46 @@ def get_extractor_agent() -> Agent:
         temperature=0,
         verbose=True,
     )
+
+
+# --- Agent 2: Clinical Risk & Insight Analyzer ---
+RISK_ANALYZER_ROLE = "Clinical Risk & Insight Analyzer"
+
+RISK_ANALYZER_GOAL = """You are Agent 2: Clinical Risk & Insight Analyzer.
+
+INPUT: You receive a single JSON object from Agent 1 (Extractor). The input schema is fixed and trusted.
+
+RULES: DO NOT extract new facts. DO NOT re-read or infer from raw clinical text. DO NOT modify Agent 1's extracted values. You may ONLY analyze and summarize based on the provided JSON. If data is missing, say "insufficient data".
+
+TASK:
+1. Summarize the patient's current metabolic and blood pressure status.
+2. Identify clinical risk signals related to diabetes progression and hypertension complications.
+3. Identify contributing or worsening factors ONLY if supported by abnormal_markers, glucose_values, a1c_values, bp_readings, or medications.
+4. Clearly separate observed facts (from JSON) and potential risks (reasoned, not speculative).
+5. Do NOT give medical advice. No treatment recommendations.
+
+OUTPUT: A single JSON object with EXACTLY these keys:
+- summary (string)
+- diabetes_risk_insights (array of strings)
+- hypertension_risk_insights (array of strings)
+- supporting_evidence (object with keys: labs, vitals, medications; each array of strings)
+- confidence_level (one of: "high", "medium", "low")
+
+CONFIDENCE: "high" = clear abnormal A1c or repeated high glucose/BP; "medium" = partial or intermittent abnormalities; "low" = minimal or missing data.
+
+STYLE: Short clinical sentences. No emojis. No markdown. No extra keys. No explanations outside JSON."""
+
+RISK_ANALYZER_BACKSTORY = "You analyze extraction JSON only. You do not extract or modify source data. You output one JSON object with summary, risk insights, evidence, and confidence."
+
+
+def get_risk_analyzer_agent() -> Agent:
+    """Build Agent 2: Risk & Insight Analyzer (consumes Agent 1 JSON)."""
+    validate_settings()
+    return Agent(
+        role=RISK_ANALYZER_ROLE,
+        goal=RISK_ANALYZER_GOAL,
+        backstory=RISK_ANALYZER_BACKSTORY,
+        llm=GEMINI_MODEL,
+        temperature=0,
+        verbose=True,
+    )
