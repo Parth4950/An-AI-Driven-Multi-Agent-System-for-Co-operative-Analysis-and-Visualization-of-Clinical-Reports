@@ -97,7 +97,6 @@
         "150"
       ],
       "medications": [
-        "insulin",
         "insulin nph & regular human"
       ]
     },
@@ -118,7 +117,8 @@
     },
     "abnormal_markers": [
       "Glucose-138*",
-      "Glucose-150*"
+      "Glucose-150*",
+      "eAG-186*"
     ]
   }
 ]

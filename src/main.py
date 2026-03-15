@@ -21,6 +21,7 @@ from src.extraction import run_extraction
 from src.risk_analysis import run_risk_analysis
 from src.summarizer import run_summarization
 from src.validator import empty_schema, validate_extraction_output
+from src.visualizer import build_visualization
 
 logging.basicConfig(
     level=logging.INFO,
@@ -135,6 +136,29 @@ def main() -> None:
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary_results, f, indent=2, ensure_ascii=False)
     logger.info("Wrote %d summaries to %s", len(summary_results), summary_path)
+
+    # Agent 4: visualization (deterministic transform; no LLM)
+    viz_results = []
+    for i, r in enumerate(results):
+        pid = r.get("patient_id", "")
+        risk = risk_results[i] if i < len(risk_results) else {}
+        risk_for_viz = {k: v for k, v in risk.items() if k != "patient_id"}
+        summary_obj = summary_results[i] if i < len(summary_results) else {}
+        summary_for_viz = {k: v for k, v in summary_obj.items() if k != "patient_id"}
+        viz = build_visualization(r, risk_for_viz, summary_for_viz)
+        viz_results.append({"patient_id": pid, **viz})
+    viz_path = _PROJECT_ROOT / "data" / "visualizations.json"
+    with open(viz_path, "w", encoding="utf-8") as f:
+        json.dump(viz_results, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d visualizations to %s", len(viz_results), viz_path)
+
+    # Print Agent 4 visualizations to console
+    print("\nAgent: Visualization Agent\n")
+    for item in viz_results:
+        visualizations = item.get("visualizations", item)
+        print("Visualization Output:")
+        print(json.dumps(visualizations, indent=2))
+        print()
 
 
 if __name__ == "__main__":

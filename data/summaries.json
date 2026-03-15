@@ -1,76 +1,77 @@
 [
   {
     "patient_id": "10000032",
-    "doctor_summary": "Patient presents with an elevated glucose level of 109 mg/dL, which suggests a potential risk for prediabetes or future progression to type 2 diabetes. No current diabetes status, A1c values, or diabetes medications are documented. Blood pressure status, readings, and medications are unavailable, preventing assessment of hypertension risk.",
-    "patient_summary": "Your recent blood test showed a blood sugar level of 109 mg/dL, which is a bit higher than what is considered normal. This suggests you might be at risk for developing prediabetes or type 2 diabetes in the future. We don't have enough information about your blood pressure or other health details to check for high blood pressure risk. It would be good to follow up with your doctor to discuss this blood sugar result and to get a more complete health check.",
-    "key_flags": [
-      "Elevated glucose",
-      "Prediabetes risk"
-    ],
-    "data_gaps": [
-      "No current diabetes status available",
-      "No HbA1c available",
-      "No diabetes medications documented",
-      "No blood pressure readings documented",
-      "No hypertension status available",
-      "No blood pressure medications documented"
-    ]
-  },
-  {
-    "patient_id": "10000764",
-    "doctor_summary": "The patient has a history of hypertension with recent blood pressure readings including 140/77 and 142/65. These readings suggest potentially uncontrolled hypertension despite current metoprolol tartrate therapy, with noted variable dosing (50 mg po tid, 50mg, 75 mg po tid). Uncontrolled hypertension increases the risk for cardiovascular and renal complications.\nElevated glucose levels of 104 mg/dL and 159 mg/dL were noted, indicating impaired glucose metabolism or potential prediabetes/undiagnosed diabetes.",
-    "patient_summary": "Your recent blood pressure readings have been a bit high, even though you are taking medication for it. This means your blood pressure might not be as well controlled as it could be, which is important for your heart and kidneys. We also noticed your sugar levels were a bit high. These findings suggest it would be good to follow up with your doctor to discuss these results and ensure your health is on the right track.",
-    "key_flags": [
-      "Potentially uncontrolled hypertension",
-      "Elevated glucose levels",
-      "Impaired glucose metabolism"
-    ],
-    "data_gaps": [
-      "No HbA1c available",
-      "No full glucose history available",
-      "No diabetes status available",
-      "No diabetes type available"
-    ]
-  },
-  {
-    "patient_id": "10000826",
-    "doctor_summary": "The patient exhibits impaired glucose regulation, evidenced by multiple elevated glucose readings ranging from 100 mg/dL to 156 mg/dL. Several of these values are marked as abnormal. These elevated levels, specifically 141 mg/dL and 156 mg/dL, suggest an increased risk of pre-diabetes or progression to type 2 diabetes. Diabetes type and current diabetes status are unavailable. Blood pressure status and related risks cannot be assessed due to insufficient data.",
-    "patient_summary": "Your recent lab results show that your blood sugar levels have been higher than what is considered normal, with readings between 100 and 156 mg/dL. These higher levels mean you might be at risk for a condition called pre-diabetes, or potentially developing type 2 diabetes. It is important to discuss these results with your doctor for a complete understanding and to determine any necessary next steps. We do not have information about your A1c (a test that shows average blood sugar over a few months) or your blood pressure readings at this time.",
+    "doctor_summary": "The patient presents with an elevated glucose level of 109 mg/dL, indicating impaired glucose regulation. This increases the risk for prediabetes or progression to type 2 diabetes. Current blood pressure status cannot be assessed due to insufficient data. No diabetes type, status, or prior A1c values are documented, and no blood pressure readings or medications are listed.",
+    "patient_summary": "A blood sugar (glucose) level of 109 mg/dL was noted. This level is slightly higher than normal, which suggests your body might not be processing sugar as efficiently as it could. This could mean you are at an increased risk for developing prediabetes or type 2 diabetes in the future. It is recommended to discuss this finding with your doctor for further evaluation. We do not have information about your blood pressure at this time.",
     "key_flags": [
       "Impaired Glucose Regulation",
-      "Risk of Pre-diabetes"
+      "Increased Prediabetes/T2D Risk"
     ],
     "data_gaps": [
       "No HbA1c available",
-      "No diabetes type information",
+      "No diabetes status available",
       "No blood pressure readings documented",
       "No hypertension status available"
     ]
   },
   {
+    "patient_id": "10000764",
+    "doctor_summary": "The patient has an established diagnosis of hypertension. Recent blood pressure readings include 125/55 mmHg, 140/77 mmHg, and 142/65 mmHg. Two of these readings (140/77 mmHg, 142/65 mmHg) indicate Stage 2 hypertension, suggesting uncontrolled blood pressure despite current treatment. Medications listed for blood pressure include metoprolol tartrate at varying dosages and frequencies (50 mg po tid, 50mg, 75 mg po tid).\n\nRegarding glycemic status, the patient has elevated glucose readings. One reading of 159 mg/dL suggests hyperglycemia and potential undiagnosed or uncontrolled diabetes, while another reading of 104 mg/dL indicates impaired fasting glucose or prediabetes.",
+    "patient_summary": "We noticed that your blood pressure has been high in some recent checks (140/77 and 142/65), even though you are taking medication for it. Your blood sugar levels were also found to be elevated, with one reading at 159 mg/dL and another at 104 mg/dL. These findings suggest that your blood pressure might need to be better controlled and your sugar levels need further evaluation. It is important to follow up with your doctor to discuss these results and see if any adjustments are needed.",
+    "key_flags": [
+      "Hypertension",
+      "Uncontrolled Hypertension (Stage 2)",
+      "Elevated Glucose",
+      "Prediabetes indication"
+    ],
+    "data_gaps": [
+      "No HbA1c available"
+    ]
+  },
+  {
     "patient_id": "10000826",
-    "doctor_summary": "Patient ID 10000826: Current metabolic and blood pressure status cannot be determined due to insufficient clinical data. No diabetes status, HbA1c values, glucose readings, blood pressure readings, or relevant medications are documented. No abnormal markers were reported.",
-    "patient_summary": "We don't have enough information about your health right now, like your blood sugar or blood pressure readings. This means we can't tell you about your current health status for these areas. To understand your health better, it's important to gather this information.",
+    "doctor_summary": "Patient ID 10000826 has no documented history of diabetes. Multiple elevated glucose readings (100, 101, 105, 113, 125, 141, 156) are present, indicating impaired glucose regulation and suggesting a potential risk for prediabetes or progression to type 2 diabetes. No diabetes-related medications are recorded.\n\nThere is insufficient data to assess hypertension status or risks, as no blood pressure readings or relevant medications are available.",
+    "patient_summary": "Based on your recent health information, we noticed that several of your blood sugar levels were higher than normal (100, 101, 105, 113, 125, 141, 156). This suggests your body might not be handling sugar as well as it should, which could mean you are at risk for developing prediabetes or type 2 diabetes. It's important to talk to your doctor about these findings to understand what they mean for your health and if any further tests are recommended.\n\nWe did not have enough information about your blood pressure to assess that part of your health.",
+    "key_flags": [
+      "Impaired Glucose Regulation",
+      "Risk of Prediabetes/Type 2 Diabetes"
+    ],
+    "data_gaps": [
+      "No HbA1c available",
+      "No blood pressure readings documented",
+      "No documented diabetes status",
+      "No documented hypertension status"
+    ]
+  },
+  {
+    "patient_id": "10000826",
+    "doctor_summary": "Insufficient data is available to assess the patient's current diabetes and blood pressure status. No A1c values, glucose readings, or blood pressure measurements were documented. There is no information on relevant medications.",
+    "patient_summary": "We don't have enough information right now to understand your blood sugar or blood pressure health. We couldn't find any records of your recent blood sugar tests (like A1c), individual blood sugar readings, or blood pressure numbers. We also don't have information about any medications you might be taking for these conditions. More information is needed to get a clear picture.",
     "key_flags": [],
     "data_gaps": [
+      "No diabetes type available",
       "No diabetes status available",
       "No HbA1c values available",
       "No glucose values available",
       "No diabetes medications documented",
       "No hypertension status available",
       "No blood pressure readings documented",
-      "No blood pressure medications documented",
+      "No hypertension medications documented",
       "No abnormal markers documented"
     ]
   },
   {
     "patient_id": "10000980",
-    "doctor_summary": "The patient has active diabetes with poor glycemic control. The most recent HbA1c is 8.1%, with glucose levels reported at 138 mg/dL and 150 mg/dL. This indicates an increased risk of diabetes-related microvascular and macrovascular complications, despite current insulin therapy, including insulin NPH and regular human insulin. \n\nAdditionally, the patient presents with severe hypertension, classified as hypertensive urgency, with a blood pressure reading of 200/103 mmHg. This critical elevation poses an immediate high risk of acute end-organ damage, affecting cardiac, renal, and cerebrovascular systems. The patient is on multiple antihypertensive medications, including atenolol, clonidine, furosemide, hydralazine, hydrochlorothiazide, lisinopril, and nifedipine, yet blood pressure remains critically elevated.",
-    "patient_summary": "Your diabetes is not currently well-controlled, with your A1c test showing 8.1% and recent blood sugar readings of 138 and 150. Your blood pressure is also very high, recorded at 200 over 103, which is a serious health concern. These levels mean you are at higher risk for health problems affecting your heart, kidneys, and brain. It is important to work closely with your doctor to manage these conditions and get your sugar and blood pressure to safer levels. Following up with your healthcare provider is crucial to help prevent future complications.",
+    "doctor_summary": "The patient has active diabetes, with an HbA1c of 8.1% and recent glucose values of 138 mg/dL and 150 mg/dL. This indicates poor long-term glycemic control and persistent hyperglycemia despite treatment with insulin nph & regular human. \nConcurrently, the patient is experiencing hypertensive urgency, with a recorded blood pressure of 200/103 mmHg. This poses a significant risk for acute end-organ damage. The patient is currently on multiple antihypertensive medications, including atenolol, clonidine, furosemide, hydralazine, hydrochlorothiazide, lisinopril, and nifedipine, suggesting resistant or difficult-to-control hypertension.",
+    "patient_summary": "Your blood sugar levels are currently high, with an A1c test showing 8.1% and recent glucose readings of 138 and 150. You are taking insulin to help with your blood sugar. Your blood pressure is also very high, measured at 200/103. You are taking several medications for your blood pressure. These high levels for both your blood sugar and blood pressure need to be reviewed by your doctor to help you stay healthy and prevent potential future problems.",
     "key_flags": [
       "Poor glycemic control",
-      "Hypertensive urgency"
+      "Persistent hyperglycemia",
+      "Hypertensive urgency",
+      "Resistant hypertension"
     ],
-    "data_gaps": []
+    "data_gaps": [
+      "Diabetes type unavailable"
+    ]
   }
 ]

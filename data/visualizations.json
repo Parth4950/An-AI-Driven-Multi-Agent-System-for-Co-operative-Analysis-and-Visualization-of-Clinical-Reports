@@ -1,0 +1,196 @@
+[
+  {
+    "patient_id": "10000032",
+    "visualizations": {
+      "risk_levels": {
+        "hypertension": "Moderate",
+        "diabetes": "Moderate"
+      },
+      "risk_scores": {
+        "hypertension_score": 0.55,
+        "diabetes_score": 0.55
+      },
+      "severity_indicator": {
+        "level": "Moderate",
+        "color": "orange"
+      },
+      "evidence_chart": [
+        {
+          "label": "Lab",
+          "value": "GLUCOSE-109*"
+        }
+      ]
+    }
+  },
+  {
+    "patient_id": "10000764",
+    "visualizations": {
+      "risk_levels": {
+        "hypertension": "High",
+        "diabetes": "High"
+      },
+      "risk_scores": {
+        "hypertension_score": 0.85,
+        "diabetes_score": 0.85
+      },
+      "severity_indicator": {
+        "level": "High",
+        "color": "red"
+      },
+      "evidence_chart": [
+        {
+          "label": "Blood Pressure",
+          "value": "125/55"
+        },
+        {
+          "label": "Blood Pressure",
+          "value": "140/77"
+        },
+        {
+          "label": "Blood Pressure",
+          "value": "142/65"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-104*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-159*"
+        },
+        {
+          "label": "Vital",
+          "value": "125/55"
+        },
+        {
+          "label": "Vital",
+          "value": "140/77"
+        },
+        {
+          "label": "Vital",
+          "value": "142/65"
+        }
+      ]
+    }
+  },
+  {
+    "patient_id": "10000826",
+    "visualizations": {
+      "risk_levels": {
+        "hypertension": "Moderate",
+        "diabetes": "Moderate"
+      },
+      "risk_scores": {
+        "hypertension_score": 0.55,
+        "diabetes_score": 0.55
+      },
+      "severity_indicator": {
+        "level": "Moderate",
+        "color": "orange"
+      },
+      "evidence_chart": [
+        {
+          "label": "Lab",
+          "value": "Glucose-100"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-101*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-105*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-113*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-125*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-141*"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-156*"
+        }
+      ]
+    }
+  },
+  {
+    "patient_id": "10000826",
+    "visualizations": {
+      "risk_levels": {
+        "hypertension": "Low",
+        "diabetes": "Low"
+      },
+      "risk_scores": {
+        "hypertension_score": 0.25,
+        "diabetes_score": 0.25
+      },
+      "severity_indicator": {
+        "level": "Low",
+        "color": "green"
+      },
+      "evidence_chart": []
+    }
+  },
+  {
+    "patient_id": "10000980",
+    "visualizations": {
+      "risk_levels": {
+        "hypertension": "High",
+        "diabetes": "High"
+      },
+      "risk_scores": {
+        "hypertension_score": 0.85,
+        "diabetes_score": 0.85
+      },
+      "severity_indicator": {
+        "level": "High",
+        "color": "red"
+      },
+      "evidence_chart": [
+        {
+          "label": "Blood Pressure",
+          "value": "200/103"
+        },
+        {
+          "label": "Glucose",
+          "value": "138 mg/dL"
+        },
+        {
+          "label": "Glucose",
+          "value": "150 mg/dL"
+        },
+        {
+          "label": "HbA1c",
+          "value": "8.1%"
+        },
+        {
+          "label": "Lab",
+          "value": "A1c-8.1"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-138"
+        },
+        {
+          "label": "Lab",
+          "value": "Glucose-150"
+        },
+        {
+          "label": "Lab",
+          "value": "eAG-186"
+        },
+        {
+          "label": "Vital",
+          "value": "BP-200/103"
+        }
+      ]
+    }
+  }
+]
