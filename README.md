@@ -29,14 +29,14 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 
 - **Filter notes:** `python src/data_filter.py` — filters discharge notes to `data/filtered_discharge_notes.csv`.
 - **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`.
-- **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard (paste a note, click Analyze, view doctor/patient summaries, risk severity, risk scores chart, evidence table, flags, and data gaps). Activate the venv first (e.g. `.venv\Scripts\activate`) or use `.venv\Scripts\python.exe -m streamlit run src/app.py`.
+- **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard (paste a note, click Analyze, view doctor/patient summaries, risk severity, risk scores chart, evidence table, flags, and data gaps). Use **Download PDF Report** or **Download JSON Report** to export a structured clinical report. Activate the venv first (e.g. `.venv\Scripts\activate`) or use `.venv\Scripts\python.exe -m streamlit run src/app.py`.
 - Set `DRY_RUN=true` in `.env` for mock outputs (no API calls).
 - **Validate vs gold standard:** `python src/validate_extraction.py` — compares extraction results to `data/gold_standard.json`.
 
 ## Project structure
 
 - `config/` — settings and extraction schema
-- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, Streamlit app (`app.py`), data filter, validator
+- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, Streamlit app (`app.py`, with PDF/JSON report export), data filter, validator
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files may be gitignored)
 - `.streamlit/` — Streamlit config (e.g. usage stats off)
 

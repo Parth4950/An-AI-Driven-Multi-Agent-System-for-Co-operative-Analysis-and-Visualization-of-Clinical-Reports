@@ -3,3 +3,4 @@ langchain-google-genai
 pandas
 python-dotenv
 streamlit
+fpdf2
