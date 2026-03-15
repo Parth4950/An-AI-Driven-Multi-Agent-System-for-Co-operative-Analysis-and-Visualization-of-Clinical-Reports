@@ -13,6 +13,13 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+# Load .env so TESSERACT_CMD and other vars are available (e.g. for document_parser)
+import os
+from dotenv import load_dotenv
+load_dotenv(_PROJECT_ROOT / ".env")
+# Disable CrewAI telemetry to avoid "signal only works in main thread" when run under Streamlit
+os.environ.setdefault("CREWAI_DISABLE_TELEMETRY", "true")
+
 import pandas as pd
 import streamlit as st
 from fpdf import FPDF

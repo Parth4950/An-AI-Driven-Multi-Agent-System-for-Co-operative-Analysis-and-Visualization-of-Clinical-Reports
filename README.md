@@ -19,7 +19,7 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
    pip install -r requirements.txt
    ```
 2. Create a `.env` file in the project root with `GEMINI_API_KEY=your_key`. Optional: `GEMINI_MODEL`, `DRY_RUN`.
-3. For the dashboard file upload: PDF/DOCX extraction uses `pypdf`, `pymupdf`, `python-docx`, `docx2txt` (in requirements). For image (PNG/JPG) OCR, install [Tesseract](https://github.com/tesseract-ocr/tesseract) on your system.
+3. For the dashboard file upload: PDF/DOCX extraction uses `pypdf`, `pymupdf`, `python-docx`, `docx2txt` (in requirements). For image (PNG/JPG) OCR, install [Tesseract](https://github.com/tesseract-ocr/tesseract) on your system. If Tesseract is not on your PATH, set `TESSERACT_CMD` in `.env` to the full path to the executable (e.g. `TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe` on Windows).
 
 ## Data
 

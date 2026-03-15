@@ -4,11 +4,18 @@ Output is plain text only; no pipeline or agent logic. Used by the dashboard bef
 """
 
 import io
+import os
 import re
+import subprocess
 import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Optional
+
+# Project root (parent of src/)
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_PROJECT_ROOT = _SCRIPT_DIR.parent
 
 SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".png", ".jpg", ".jpeg")
 SUPPORTED_MIME_PDF = "application/pdf"
@@ -139,14 +146,81 @@ def extract_text_from_docx(file_bytes: bytes) -> Optional[str]:
     return None
 
 
+def _run_tesseract_subprocess(tesseract_cmd: str, image_path: str) -> tuple[Optional[str], Optional[str]]:
+    """Run tesseract.exe via subprocess; returns (text, error_message)."""
+    try:
+        # Use "-" so tesseract writes text to stdout
+        result = subprocess.run(
+            [tesseract_cmd, image_path, "-", "quiet"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+        )
+        if result.returncode == 0 and result.stdout:
+            return result.stdout.strip(), None
+        if result.stderr:
+            return None, result.stderr.strip() or "Tesseract failed."
+        return None, "Tesseract returned no text."
+    except subprocess.TimeoutExpired:
+        return None, "Tesseract timed out."
+    except FileNotFoundError:
+        return None, f"Tesseract not found at: {tesseract_cmd}"
+    except Exception as e:
+        return None, str(e)
+
+
 def extract_text_from_image(file_bytes: bytes) -> tuple[Optional[str], Optional[str]]:
     """
     Extract text from image using OCR. Returns (text, custom_error_message).
-    If Tesseract is not installed, custom_error_message is set so the UI can show a helpful message.
+    Set TESSERACT_CMD in .env to the full path to tesseract.exe if it is not on system PATH.
     """
+    # Load .env so TESSERACT_CMD is available (dashboard may not have loaded it yet)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_PROJECT_ROOT / ".env")
+    except Exception:
+        pass
+    tesseract_cmd = os.environ.get("TESSERACT_CMD", "").strip()
+    if tesseract_cmd:
+        tesseract_cmd = os.path.normpath(os.path.expanduser(tesseract_cmd))
+        # If path is a directory, use tesseract.exe inside it
+        if os.path.isdir(tesseract_cmd):
+            tesseract_cmd = os.path.join(tesseract_cmd, "tesseract.exe")
+    if tesseract_cmd and os.path.isfile(tesseract_cmd):
+        # Prefer subprocess so we don't rely on pytesseract finding the executable
+        suffix = ".png"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp.write(file_bytes)
+            tmp.flush()
+            tmp_path = tmp.name
+        try:
+            text, err = _run_tesseract_subprocess(tesseract_cmd, tmp_path)
+            if text:
+                return (text if text.strip() else None, None)
+            if err:
+                return None, (
+                    "Image OCR failed. Install Tesseract OCR for image support: "
+                    "https://github.com/tesseract-ocr/tesseract. "
+                    f"Detail: {err}"
+                )
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+    elif tesseract_cmd:
+        return None, (
+            f"Tesseract not found at path in TESSERACT_CMD. Check .env: {tesseract_cmd}"
+        )
+    # Fallback: pytesseract (when TESSERACT_CMD not set, e.g. Tesseract on PATH)
     try:
         import pytesseract
         from PIL import Image
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
         img = Image.open(io.BytesIO(file_bytes))
         if img.mode not in ("L", "RGB", "RGBA"):
             img = img.convert("RGB")

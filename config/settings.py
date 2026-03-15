@@ -29,6 +29,10 @@ MAX_429_RETRIES = 2
 DATA_DIR = PROJECT_ROOT / "data"
 FILTERED_NOTES_PATH = DATA_DIR / "filtered_discharge_notes.csv"
 
+# Optional: full path to Tesseract executable for image OCR (e.g. C:\Program Files\Tesseract-OCR\tesseract.exe)
+# Set in .env if Tesseract is not on system PATH
+TESSERACT_CMD = os.getenv("TESSERACT_CMD", "").strip() or None
+
 # CrewAI SQLite task output storage: use project data dir so it's writable (avoids readonly DB errors)
 if "CREWAI_DB_PATH" not in os.environ:
     os.environ["CREWAI_DB_PATH"] = str(DATA_DIR)
