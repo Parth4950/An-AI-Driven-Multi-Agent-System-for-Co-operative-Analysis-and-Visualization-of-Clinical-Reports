@@ -17,6 +17,7 @@ import pandas as pd
 import streamlit as st
 from fpdf import FPDF
 
+from src.document_parser import extract_text_from_file, is_supported_file
 from src.orchestrator import run_pipeline
 
 
@@ -152,24 +153,45 @@ st.title("Clinical Risk Analysis Dashboard")
 st.markdown("*AI‑powered analysis of diabetes and hypertension risk from clinical notes.*")
 st.divider()
 
-# ——— Section 2: Input ———
-st.subheader("Input Clinical Note")
+# ——— Section 2: Upload Clinical Report ———
+st.subheader("Upload Clinical Report")
+st.caption("Paste clinical text below **or** upload a file (PDF, DOCX, PNG, JPG).")
 clinical_note = st.text_area(
-    "Paste clinical or discharge note below",
-    height=280,
+    "Paste clinical or discharge note",
+    height=200,
     placeholder="Paste discharge summary or clinical note text here...",
+    label_visibility="collapsed",
+)
+uploaded_file = st.file_uploader(
+    "Or upload a file",
+    type=["pdf", "docx", "png", "jpg", "jpeg"],
     label_visibility="collapsed",
 )
 run_clicked = st.button("Analyze", type="primary", use_container_width=False)
 
 if run_clicked:
-    note = (clinical_note or "").strip()
-    if not note:
-        st.warning("Please enter a clinical note before running analysis.")
-    else:
+    clinical_text = None
+    from_file = False
+    if uploaded_file is not None:
+        if not is_supported_file(uploaded_file.name):
+            st.warning("Unsupported file type. Please upload PDF, DOCX, PNG, or JPG.")
+        else:
+            file_bytes = uploaded_file.read()
+            clinical_text, err = extract_text_from_file(file_bytes, uploaded_file.name)
+            if err:
+                st.warning(err)
+            else:
+                from_file = True
+    if clinical_text is None and not (uploaded_file is not None and not is_supported_file(uploaded_file.name)):
+        pasted = (clinical_note or "").strip()
+        if pasted:
+            clinical_text = pasted
+    if clinical_text:
+        if from_file:
+            st.info("Clinical text extracted successfully. Running analysis...")
         with st.spinner("Running pipeline (Extraction → Risk Analysis → Summary → Visualization)…"):
             try:
-                result = run_pipeline(note)
+                result = run_pipeline(clinical_text)
                 st.session_state["last_result"] = result
                 st.success("Analysis complete.")
             except Exception as e:
@@ -177,10 +199,12 @@ if run_clicked:
                 st.exception(e)
                 if "last_result" in st.session_state:
                     del st.session_state["last_result"]
+    elif not (uploaded_file and not is_supported_file(uploaded_file.name)):
+        st.warning("Please enter a clinical note or upload a file before running analysis.")
 
-# ——— Sections 3–9: Only when we have a result (no JSON) ———
+# ——— Sections 3–10: Only when we have a result (no JSON) ———
 if "last_result" not in st.session_state:
-    st.info("Paste a clinical note and click **Analyze** to see results.")
+    st.info("Paste a clinical note or upload a file (PDF, DOCX, PNG, JPG), then click **Analyze** to see results.")
     st.stop()
 
 result = st.session_state["last_result"]
