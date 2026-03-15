@@ -1,12 +1,14 @@
 # Clinical Analyzer
 
-Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discharge notes for diabetes and blood pressure. **Agent 1** extracts structured facts; **Agent 2** analyzes extraction JSON for metabolic/BP risk insights; **Agent 3** produces doctor and patient summaries from extraction + risk analysis. Outputs are validated and written to JSON for downstream use or gold-standard comparison.
+Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discharge notes for diabetes and blood pressure. **Agent 1** extracts structured facts; **Agent 2** analyzes extraction for risk insights; **Agent 3** produces doctor and patient summaries; **Agent 4** builds visualization data; **Agent 5 (Orchestrator)** runs the full pipeline. A Streamlit dashboard presents results as a clinical risk analysis UI (no raw JSON).
 
 ## Agents
 
 - **Agent 1 — Clinical Data Extractor:** Extracts only explicitly stated diabetes and hypertension data (type, status, A1C, glucose, BP readings, medications, abnormal markers). No inference; empty when not stated.
-- **Agent 2 — Clinical Risk & Insight Analyzer:** Consumes Agent 1’s JSON. Summarizes metabolic and BP status; identifies diabetes and hypertension risk signals and contributing factors supported only by the extracted data. Outputs summary, risk insights, supporting evidence, and confidence level. No medical advice.
-- **Agent 3 — Clinical Summarizer:** Consumes extraction (Agent 1) and risk_analysis (Agent 2). Produces a doctor-facing summary (clinical tone), a patient-facing summary (plain language), key_flags (only if supported by Agent 2), and data_gaps. No new facts, no treatment advice, no contradicting earlier agents.
+- **Agent 2 — Clinical Risk & Insight Analyzer:** Consumes Agent 1’s JSON. Summarizes metabolic and BP status; identifies risk signals and contributing factors. Outputs summary, risk insights, supporting evidence, and confidence level. No medical advice.
+- **Agent 3 — Clinical Summarizer:** Consumes extraction and risk_analysis. Produces doctor summary, patient summary, key_flags, and data_gaps. No new facts, no treatment advice.
+- **Agent 4 — Visualization:** Deterministic transform of extraction + risk + summary into visualization-ready structures (risk levels, scores, severity indicator, evidence chart) for dashboards.
+- **Agent 5 — Orchestrator:** Runs the pipeline in order: Extraction → Risk Analysis → Summary → Visualization. Single entry point for the full workflow.
 
 ## Setup
 
@@ -16,7 +18,7 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
    .venv\Scripts\activate   # Windows
    pip install -r requirements.txt
    ```
-2. Copy `.env.example` to `.env` and set `GEMINI_API_KEY` (and optional `GEMINI_MODEL`, `DRY_RUN`).
+2. Create a `.env` file in the project root with `GEMINI_API_KEY=your_key`. Optional: `GEMINI_MODEL`, `DRY_RUN`.
 
 ## Data
 
@@ -25,19 +27,18 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 
 ## Usage
 
-- **Filter notes:** `python src/data_filter.py` — filters discharge notes containing diabetes/hypertension mentions to `data/filtered_discharge_notes.csv`.
-- **Run pipeline:** `python src/main.py` — runs Agent 1 (extractor) on each filtered note, validates output, then Agent 2 (risk analyzer), then Agent 3 (summarizer) on each result. Writes:
-  - `data/extraction_results.json` — one extraction object per note (patient_id, diabetes, blood_pressure, abnormal_markers).
-  - `data/risk_insights.json` — one insight object per note (summary, diabetes_risk_insights, hypertension_risk_insights, supporting_evidence, confidence_level).
-  - `data/summaries.json` — one summary per note (patient_id, doctor_summary, patient_summary, key_flags, data_gaps).
-- Set `DRY_RUN=true` in `.env` to use mock outputs (no API calls, no billing).
-- **Validate vs gold standard:** `python src/validate_extraction.py` — compares `data/extraction_results.json` to `data/gold_standard.json` and prints metrics.
+- **Filter notes:** `python src/data_filter.py` — filters discharge notes to `data/filtered_discharge_notes.csv`.
+- **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`.
+- **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard (paste a note, click Analyze, view doctor/patient summaries, risk severity, risk scores chart, evidence table, flags, and data gaps). Activate the venv first (e.g. `.venv\Scripts\activate`) or use `.venv\Scripts\python.exe -m streamlit run src/app.py`.
+- Set `DRY_RUN=true` in `.env` for mock outputs (no API calls).
+- **Validate vs gold standard:** `python src/validate_extraction.py` — compares extraction results to `data/gold_standard.json`.
 
 ## Project structure
 
 - `config/` — settings and extraction schema
-- `src/` — agents (extractor, risk analyzer, summarizer), tasks, extraction runner, risk_analysis runner, summarizer runner, data filter, validator
+- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, Streamlit app (`app.py`), data filter, validator
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files may be gitignored)
+- `.streamlit/` — Streamlit config (e.g. usage stats off)
 
 ## Repository
 

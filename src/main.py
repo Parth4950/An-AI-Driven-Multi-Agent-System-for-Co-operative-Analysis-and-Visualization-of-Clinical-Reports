@@ -1,7 +1,6 @@
 """
-Entry point: load first 5 rows from filtered_discharge_notes.csv,
-run CrewAI extractor on each note, validate JSON, and handle errors.
-429 and quota handling in run_extraction; DRY_RUN for mock mode without billing.
+Entry point: load filtered_discharge_notes.csv and run the clinical pipeline via the Orchestrator (Agent 5).
+The orchestrator runs Extraction → Risk Analysis → Summary → Visualization for each note.
 """
 
 import json
@@ -17,11 +16,8 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from config.settings import DRY_RUN, FILTERED_NOTES_PATH, validate_settings
-from src.extraction import run_extraction
-from src.risk_analysis import run_risk_analysis
-from src.summarizer import run_summarization
+from src.orchestrator import run_pipeline
 from src.validator import empty_schema, validate_extraction_output
-from src.visualizer import build_visualization
 
 logging.basicConfig(
     level=logging.INFO,
@@ -72,7 +68,7 @@ def main() -> None:
             f"Column '{TEXT_COLUMN}' does not exist. Available: {list(df.columns)}"
         )
 
-    results = []
+    pipeline_results = []
     for idx, row in df.iterrows():
         patient_id = _get_patient_id(row, idx)
         note_text = row[TEXT_COLUMN]
@@ -80,84 +76,83 @@ def main() -> None:
             logger.warning("Row %s: empty note, skipping", idx)
             continue
         try:
-            out = run_extraction(patient_id=patient_id, note_text=str(note_text))
-            out = validate_extraction_output(out, verbose=True)
-            results.append(out)
-            if "error" not in out:
-                logger.info("patient_id=%s OK", patient_id)
-            else:
-                logger.warning("patient_id=%s error: %s", patient_id, out.get("error"))
+            result = run_pipeline(str(note_text), patient_id=patient_id)
+            pipeline_results.append(result)
+            logger.info("patient_id=%s pipeline OK", patient_id)
         except (ValueError, json.JSONDecodeError, Exception) as e:
             if _is_429_error(e):
                 logger.error("patient_id=%s 429/quota: %s", patient_id, str(e))
             elif _is_404_model_error(e):
                 logger.error("patient_id=%s model 404/unavailable: %s", patient_id, str(e))
             else:
-                logger.exception("patient_id=%s failed: %s", patient_id, e)
-            # Only validated JSON is written: use full empty schema + error, then validate
-            error_payload = {**empty_schema(patient_id), "error": str(e)}
-            results.append(validate_extraction_output(error_payload, verbose=True))
+                logger.exception("patient_id=%s pipeline failed: %s", patient_id, e)
+            error_extraction = validate_extraction_output(
+                {**empty_schema(patient_id), "error": str(e)}, verbose=True
+            )
+            pipeline_results.append({
+                "extraction": error_extraction,
+                "risk_analysis": {
+                    "summary": "Insufficient data.",
+                    "diabetes_risk_insights": [],
+                    "hypertension_risk_insights": [],
+                    "supporting_evidence": {"labs": [], "vitals": [], "medications": []},
+                    "confidence_level": "low",
+                },
+                "summary": {
+                    "doctor_summary": "",
+                    "patient_summary": "",
+                    "key_flags": [],
+                    "data_gaps": [],
+                },
+                "visualizations": {
+                    "visualizations": {
+                        "risk_levels": {"hypertension": "Low", "diabetes": "Low"},
+                        "risk_scores": {"hypertension_score": 0.25, "diabetes_score": 0.25},
+                        "severity_indicator": {"level": "Low", "color": "green"},
+                        "evidence_chart": [],
+                    }
+                },
+            })
+
+    # Write outputs from orchestrator results
+    extraction_list = [r["extraction"] for r in pipeline_results]
+    risk_list = [
+        {"patient_id": r["extraction"].get("patient_id", ""), **r["risk_analysis"]}
+        for r in pipeline_results
+    ]
+    summary_list = [
+        {"patient_id": r["extraction"].get("patient_id", ""), **r["summary"]}
+        for r in pipeline_results
+    ]
+    viz_list = [
+        {"patient_id": r["extraction"].get("patient_id", ""), **r["visualizations"]}
+        for r in pipeline_results
+    ]
 
     out_path = _PROJECT_ROOT / "data" / "extraction_results.json"
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-    logger.info("Wrote %d results to %s", len(results), out_path)
+        json.dump(extraction_list, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d results to %s", len(extraction_list), out_path)
 
-    # Agent 2: risk analysis on each validated result (same order; error results get default low-confidence insight)
-    risk_results = []
-    for r in results:
-        pid = r.get("patient_id", "")
-        if "error" in r:
-            risk_results.append({
-                "patient_id": pid,
-                "summary": "Insufficient data.",
-                "diabetes_risk_insights": [],
-                "hypertension_risk_insights": [],
-                "supporting_evidence": {"labs": [], "vitals": [], "medications": []},
-                "confidence_level": "low",
-            })
-        else:
-            insight = run_risk_analysis(r)
-            risk_results.append({"patient_id": pid, **insight})
     risk_path = _PROJECT_ROOT / "data" / "risk_insights.json"
     with open(risk_path, "w", encoding="utf-8") as f:
-        json.dump(risk_results, f, indent=2, ensure_ascii=False)
-    logger.info("Wrote %d risk insights to %s", len(risk_results), risk_path)
+        json.dump(risk_list, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d risk insights to %s", len(risk_list), risk_path)
 
-    # Agent 3: summarizer on each (extraction, risk_insight) pair (same order)
-    summary_results = []
-    for i, r in enumerate(results):
-        pid = r.get("patient_id", "")
-        risk = risk_results[i] if i < len(risk_results) else {}
-        risk_for_agent = {k: v for k, v in risk.items() if k != "patient_id"}
-        summary = run_summarization(r, risk_for_agent)
-        summary_results.append({"patient_id": pid, **summary})
     summary_path = _PROJECT_ROOT / "data" / "summaries.json"
     with open(summary_path, "w", encoding="utf-8") as f:
-        json.dump(summary_results, f, indent=2, ensure_ascii=False)
-    logger.info("Wrote %d summaries to %s", len(summary_results), summary_path)
+        json.dump(summary_list, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d summaries to %s", len(summary_list), summary_path)
 
-    # Agent 4: visualization (deterministic transform; no LLM)
-    viz_results = []
-    for i, r in enumerate(results):
-        pid = r.get("patient_id", "")
-        risk = risk_results[i] if i < len(risk_results) else {}
-        risk_for_viz = {k: v for k, v in risk.items() if k != "patient_id"}
-        summary_obj = summary_results[i] if i < len(summary_results) else {}
-        summary_for_viz = {k: v for k, v in summary_obj.items() if k != "patient_id"}
-        viz = build_visualization(r, risk_for_viz, summary_for_viz)
-        viz_results.append({"patient_id": pid, **viz})
     viz_path = _PROJECT_ROOT / "data" / "visualizations.json"
     with open(viz_path, "w", encoding="utf-8") as f:
-        json.dump(viz_results, f, indent=2, ensure_ascii=False)
-    logger.info("Wrote %d visualizations to %s", len(viz_results), viz_path)
+        json.dump(viz_list, f, indent=2, ensure_ascii=False)
+    logger.info("Wrote %d visualizations to %s", len(viz_list), viz_path)
 
-    # Print Agent 4 visualizations to console
-    print("\nAgent: Visualization Agent\n")
-    for item in viz_results:
-        visualizations = item.get("visualizations", item)
-        print("Visualization Output:")
-        print(json.dumps(visualizations, indent=2))
+    # Print final pipeline output for each result
+    print("\n===== FINAL PIPELINE OUTPUT =====\n")
+    for result in pipeline_results:
+        print(json.dumps(result, indent=2))
         print()
 
 
