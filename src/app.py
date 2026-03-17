@@ -27,6 +27,7 @@ from fpdf import FPDF
 from src.document_parser import extract_text_from_file, is_supported_file
 from src.orchestrator import run_pipeline
 from src.trends import build_patient_trends
+from db.queries import fetch_all_patients, fetch_patient_history
 
 
 def _build_report_data(result):
@@ -156,188 +157,193 @@ def _build_pdf_bytes(report):
 
 st.set_page_config(page_title="Clinical Risk Analysis Dashboard", layout="wide")
 
-# ——— Section 1: Title ———
+# Sidebar navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", ["Upload Report", "Patient Dashboard"], index=0)
+
+# ——— Common title ———
 st.title("Clinical Risk Analysis Dashboard")
 st.markdown("*AI‑powered analysis of diabetes and hypertension risk from clinical notes.*")
 st.divider()
 
-# ——— Section 2: Upload Clinical Report ———
-st.subheader("Upload Clinical Report")
-st.caption("Provide a patient identifier, then paste clinical text **or** upload a file (PDF, DOCX, PNG, JPG).")
-patient_id_input = st.text_input(
-    "Patient ID",
-    value="",
-    placeholder="e.g. MRN1234 or internal patient code",
-)
-clinical_note = st.text_area(
-    "Paste clinical or discharge note",
-    height=200,
-    placeholder="Paste discharge summary or clinical note text here...",
-    label_visibility="collapsed",
-)
-uploaded_file = st.file_uploader(
-    "Or upload a file",
-    type=["pdf", "docx", "png", "jpg", "jpeg"],
-    label_visibility="collapsed",
-)
-run_clicked = st.button("Analyze", type="primary", use_container_width=False)
+if page == "Upload Report":
+    # ——— Section 2: Upload Clinical Report ———
+    st.subheader("Upload Clinical Report")
+    st.caption("Provide a patient identifier, then paste clinical text **or** upload a file (PDF, DOCX, PNG, JPG).")
+    patient_id_input = st.text_input(
+        "Patient ID",
+        value="",
+        placeholder="e.g. MRN1234 or internal patient code",
+    )
+    clinical_note = st.text_area(
+        "Paste clinical or discharge note",
+        height=200,
+        placeholder="Paste discharge summary or clinical note text here...",
+        label_visibility="collapsed",
+    )
+    uploaded_file = st.file_uploader(
+        "Or upload a file",
+        type=["pdf", "docx", "png", "jpg", "jpeg"],
+        label_visibility="collapsed",
+    )
+    run_clicked = st.button("Analyze", type="primary", use_container_width=False)
 
-if run_clicked:
-    clinical_text = None
-    from_file = False
-    if uploaded_file is not None:
-        if not is_supported_file(uploaded_file.name):
-            st.warning("Unsupported file type. Please upload PDF, DOCX, PNG, or JPG.")
-        else:
-            file_bytes = uploaded_file.read()
-            clinical_text, err = extract_text_from_file(file_bytes, uploaded_file.name)
-            if err:
-                st.warning(err)
+    if run_clicked:
+        clinical_text = None
+        from_file = False
+        if uploaded_file is not None:
+            if not is_supported_file(uploaded_file.name):
+                st.warning("Unsupported file type. Please upload PDF, DOCX, PNG, or JPG.")
             else:
-                from_file = True
-    if clinical_text is None and not (uploaded_file is not None and not is_supported_file(uploaded_file.name)):
-        pasted = (clinical_note or "").strip()
-        if pasted:
-            clinical_text = pasted
-    if clinical_text:
-        if from_file:
-            st.info("Clinical text extracted successfully. Running analysis...")
-        with st.spinner("Running pipeline (Extraction → Risk Analysis → Summary → Visualization)…"):
-            try:
-                patient_id_effective = (patient_id_input or "").strip() or "unknown"
-                input_type = "text"
-                if from_file and uploaded_file is not None:
-                    input_type = (uploaded_file.name.rsplit(".", 1)[-1] or "file").lower()
-                result = run_pipeline(clinical_text, patient_id=patient_id_effective, input_type=input_type)
-                st.session_state["last_result"] = result
-                st.session_state["last_patient_id"] = patient_id_effective
-                # Build longitudinal trends from stored DB data (no re-runs).
-                st.session_state["patient_trends"] = build_patient_trends(patient_id_effective)
-                st.success("Analysis complete.")
-            except Exception as e:
-                st.error(f"Pipeline failed: {e}")
-                st.exception(e)
-                if "last_result" in st.session_state:
-                    del st.session_state["last_result"]
-    elif not (uploaded_file and not is_supported_file(uploaded_file.name)):
-        st.warning("Please enter a clinical note or upload a file before running analysis.")
+                file_bytes = uploaded_file.read()
+                clinical_text, err = extract_text_from_file(file_bytes, uploaded_file.name)
+                if err:
+                    st.warning(err)
+                else:
+                    from_file = True
+        if clinical_text is None and not (uploaded_file is not None and not is_supported_file(uploaded_file.name)):
+            pasted = (clinical_note or "").strip()
+            if pasted:
+                clinical_text = pasted
+        if clinical_text:
+            if from_file:
+                st.info("Clinical text extracted successfully. Running analysis...")
+            with st.spinner("Running pipeline (Extraction → Risk Analysis → Summary → Visualization)…"):
+                try:
+                    patient_id_effective = (patient_id_input or "").strip() or "unknown"
+                    input_type = "text"
+                    if from_file and uploaded_file is not None:
+                        input_type = (uploaded_file.name.rsplit(".", 1)[-1] or "file").lower()
+                    result = run_pipeline(clinical_text, patient_id=patient_id_effective, input_type=input_type)
+                    st.session_state["last_result"] = result
+                    st.session_state["last_patient_id"] = patient_id_effective
+                    # Build longitudinal trends from stored DB data (no re-runs).
+                    st.session_state["patient_trends"] = build_patient_trends(patient_id_effective)
+                    st.success("Analysis complete.")
+                except Exception as e:
+                    st.error(f"Pipeline failed: {e}")
+                    st.exception(e)
+                    if "last_result" in st.session_state:
+                        del st.session_state["last_result"]
+        elif not (uploaded_file and not is_supported_file(uploaded_file.name)):
+            st.warning("Please enter a clinical note or upload a file before running analysis.")
 
-# ——— Sections 3–10: Only when we have a result (no JSON) ———
-if "last_result" not in st.session_state:
-    st.info("Paste a clinical note or upload a file (PDF, DOCX, PNG, JPG), then click **Analyze** to see results.")
-    st.stop()
+    # ——— Sections 3–11: Only when we have a result (no JSON) ———
+    if "last_result" not in st.session_state:
+        st.info("Paste a clinical note or upload a file (PDF, DOCX, PNG, JPG), then click **Analyze** to see results.")
+        st.stop()
 
-result = st.session_state["last_result"]
-patient_id_for_trends = st.session_state.get("last_patient_id", "")
-patient_trends = st.session_state.get("patient_trends")
-summary = result.get("summary") or {}
-viz = (result.get("visualizations") or {}).get("visualizations") or {}
+    result = st.session_state["last_result"]
+    patient_id_for_trends = st.session_state.get("last_patient_id", "")
+    patient_trends = st.session_state.get("patient_trends")
+    summary = result.get("summary") or {}
+    viz = (result.get("visualizations") or {}).get("visualizations") or {}
 
-# ——— Section 3: Doctor Summary ———
-st.subheader("Doctor Summary")
-doctor_text = (summary.get("doctor_summary") or "").strip()
-if doctor_text:
-    st.markdown(doctor_text)
-else:
-    st.caption("No doctor summary available.")
+    # ——— Section 3: Doctor Summary ———
+    st.subheader("Doctor Summary")
+    doctor_text = (summary.get("doctor_summary") or "").strip()
+    if doctor_text:
+        st.markdown(doctor_text)
+    else:
+        st.caption("No doctor summary available.")
 
-st.divider()
+    st.divider()
 
-# ——— Section 4: Patient Summary ———
-st.subheader("Patient Summary")
-patient_text = (summary.get("patient_summary") or "").strip()
-if patient_text:
-    st.markdown(patient_text)
-else:
-    st.caption("No patient summary available.")
+    # ——— Section 4: Patient Summary ———
+    st.subheader("Patient Summary")
+    patient_text = (summary.get("patient_summary") or "").strip()
+    if patient_text:
+        st.markdown(patient_text)
+    else:
+        st.caption("No patient summary available.")
 
-st.divider()
+    st.divider()
 
-# ——— Section 5: Risk Severity Indicator ———
-st.subheader("Risk Severity")
-severity = viz.get("severity_indicator") or {}
-level = (severity.get("level") or "Low").strip()
-color = (severity.get("color") or "green").strip().lower()
-emoji = {"red": "🔴", "orange": "🟠", "green": "🟢"}.get(color, "🟢")
-label = f"{emoji} {level.upper()} RISK"
-if color == "red":
-    st.error(label)
-elif color == "orange":
-    st.warning(label)
-else:
-    st.success(label)
+    # ——— Section 5: Risk Severity Indicator ———
+    st.subheader("Risk Severity")
+    severity = viz.get("severity_indicator") or {}
+    level = (severity.get("level") or "Low").strip()
+    color = (severity.get("color") or "green").strip().lower()
+    emoji = {"red": "🔴", "orange": "🟠", "green": "🟢"}.get(color, "🟢")
+    label = f"{emoji} {level.upper()} RISK"
+    if color == "red":
+        st.error(label)
+    elif color == "orange":
+        st.warning(label)
+    else:
+        st.success(label)
 
-st.divider()
+    st.divider()
 
-# ——— Section 6: Risk Score Bar Chart ———
-st.subheader("Clinical Risk Scores")
-scores = viz.get("risk_scores") or {}
-d_score = float(scores.get("diabetes_score") or 0)
-h_score = float(scores.get("hypertension_score") or 0)
-chart_df = pd.DataFrame(
-    {"Risk Score": [d_score, h_score]},
-    index=["Diabetes", "Hypertension"],
-)
-st.bar_chart(chart_df)
+    # ——— Section 6: Risk Score Bar Chart ———
+    st.subheader("Clinical Risk Scores")
+    scores = viz.get("risk_scores") or {}
+    d_score = float(scores.get("diabetes_score") or 0)
+    h_score = float(scores.get("hypertension_score") or 0)
+    chart_df = pd.DataFrame(
+        {"Risk Score": [d_score, h_score]},
+        index=["Diabetes", "Hypertension"],
+    )
+    st.bar_chart(chart_df)
 
-st.divider()
+    st.divider()
 
-# ——— Section 7: Clinical Evidence Table ———
-st.subheader("Clinical Evidence")
-evidence = viz.get("evidence_chart") or []
-if isinstance(evidence, list) and evidence:
-    rows = []
-    for item in evidence:
-        if isinstance(item, dict):
-            rows.append({
-                "Measurement": str(item.get("label") or "").strip() or "—",
-                "Value": str(item.get("value") or "").strip() or "—",
-            })
-    if rows:
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    # ——— Section 7: Clinical Evidence Table ———
+    st.subheader("Clinical Evidence")
+    evidence = viz.get("evidence_chart") or []
+    if isinstance(evidence, list) and evidence:
+        rows = []
+        for item in evidence:
+            if isinstance(item, dict):
+                rows.append({
+                    "Measurement": str(item.get("label") or "").strip() or "—",
+                    "Value": str(item.get("value") or "").strip() or "—",
+                })
+        if rows:
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        else:
+            st.caption("No evidence data available.")
     else:
         st.caption("No evidence data available.")
-else:
-    st.caption("No evidence data available.")
 
-st.divider()
+    st.divider()
 
-# ——— Section 8: Key Clinical Flags ———
-st.subheader("Key Clinical Flags")
-flags = summary.get("key_flags") or []
-if isinstance(flags, list) and flags:
-    for f in flags:
-        text = str(f).strip()
-        if text:
-            st.markdown(f"• {text}")
-else:
-    st.caption("No key flags identified.")
+    # ——— Section 8: Key Clinical Flags ———
+    st.subheader("Key Clinical Flags")
+    flags = summary.get("key_flags") or []
+    if isinstance(flags, list) and flags:
+        for f in flags:
+            text = str(f).strip()
+            if text:
+                st.markdown(f"• {text}")
+    else:
+        st.caption("No key flags identified.")
 
-st.divider()
+    st.divider()
 
-# ——— Section 9: Data Gaps ———
-gaps = summary.get("data_gaps") or []
-if isinstance(gaps, list) and gaps:
-    gap_texts = [str(g).strip() for g in gaps if str(g).strip()]
-    if gap_texts:
-        st.subheader("Data Gaps")
-        with st.container():
-            st.warning("The following clinically relevant information was not found in the note:")
-            for g in gap_texts:
-                st.markdown(f"• {g}")
+    # ——— Section 9: Data Gaps ———
+    gaps = summary.get("data_gaps") or []
+    if isinstance(gaps, list) and gaps:
+        gap_texts = [str(g).strip() for g in gaps if str(g).strip()]
+        if gap_texts:
+            st.subheader("Data Gaps")
+            with st.container():
+                st.warning("The following clinically relevant information was not found in the note:")
+                for g in gap_texts:
+                    st.markdown(f"• {g}")
 
-st.divider()
+    st.divider()
 
-# ——— Section 10: Patient Trends (Longitudinal History) ———
-st.subheader("Patient Trends")
-if patient_trends and isinstance(patient_trends, dict):
-    t = patient_trends.get("trends") or {}
-    dates = t.get("dates") or []
-    a1c = t.get("a1c") or []
-    glucose = t.get("glucose") or []
-    bp_vals = t.get("bp") or []
-    diab_risk = t.get("diabetes_risk") or []
-    htn_risk = t.get("hypertension_risk") or []
+    # ——— Section 10: Patient Trends (Longitudinal History) ———
+    st.subheader("Patient Trends")
+    if patient_trends and isinstance(patient_trends, dict):
+        t = patient_trends.get("trends") or {}
+        dates = t.get("dates") or []
+        a1c = t.get("a1c") or []
+        glucose = t.get("glucose") or []
+        bp_vals = t.get("bp") or []
+        diab_risk = t.get("diabetes_risk") or []
+        htn_risk = t.get("hypertension_risk") or []
 
     if dates:
         # Format dates (remove microseconds, keep date + time if present)
@@ -403,28 +409,160 @@ if patient_trends and isinstance(patient_trends, dict):
         st.markdown(f"- Recent Trend: {htn_recent}")
     else:
         st.caption("No stored history found for this patient yet. Trends will appear after multiple reports are stored.")
+
+    st.divider()
+
+    # ——— Section 11: Download Report ———
+    st.subheader("Download Report")
+    report_data = _build_report_data(result)
+    col1, col2 = st.columns(2)
+    with col1:
+        pdf_bytes = _build_pdf_bytes(report_data)
+        st.download_button(
+            label="Download PDF Report",
+            data=pdf_bytes,
+            file_name="clinical_risk_analysis_report.pdf",
+            mime="application/pdf",
+        )
+    with col2:
+        json_str = json.dumps(report_data, indent=2)
+        st.download_button(
+            label="Download JSON Report",
+            data=json_str,
+            file_name="clinical_risk_analysis_report.json",
+            mime="application/json",
+        )
+
 else:
-    st.caption("Run an analysis with a patient ID to build longitudinal trends.")
+    # ——— Patient Dashboard / Admin view ———
+    st.subheader("Patient Dashboard")
 
-st.divider()
+    patients = fetch_all_patients()
+    if not patients:
+        st.info("No patients found in the database yet. Upload a report to create patient records.")
+        st.stop()
 
-# ——— Section 11: Download Report ———
-st.subheader("Download Report")
-report_data = _build_report_data(result)
-col1, col2 = st.columns(2)
-with col1:
-    pdf_bytes = _build_pdf_bytes(report_data)
-    st.download_button(
-        label="Download PDF Report",
-        data=pdf_bytes,
-        file_name="clinical_risk_analysis_report.pdf",
-        mime="application/pdf",
-    )
-with col2:
-    json_str = json.dumps(report_data, indent=2)
-    st.download_button(
-        label="Download JSON Report",
-        data=json_str,
-        file_name="clinical_risk_analysis_report.json",
-        mime="application/json",
-    )
+    st.markdown("**All Patients Overview**")
+    # Build overview table using latest entries per patient
+    overview_rows = []
+    for pid in patients:
+        history_rows = fetch_patient_history(pid)
+        if not history_rows:
+            overview_rows.append(
+                {
+                    "Patient ID": pid,
+                    "Last HbA1c": None,
+                    "Last BP": "",
+                    "Risk Level": "No reports",
+                }
+            )
+            continue
+        last = history_rows[-1]
+        extraction = last.get("extraction_json") or {}
+        viz_root = last.get("visualization_json") or {}
+        viz = (viz_root.get("visualizations") if isinstance(viz_root, dict) else None) or {}
+        diabetes = (extraction.get("diabetes") or {}) if isinstance(extraction, dict) else {}
+        bp_block = (extraction.get("blood_pressure") or {}) if isinstance(extraction, dict) else {}
+        a1c_vals = diabetes.get("a1c_values") or []
+        bp_vals = bp_block.get("bp_readings") or []
+        risk_levels = viz.get("risk_levels") or {}
+        overall_level = (viz.get("severity_indicator") or {}).get("level") or "Low"
+        overview_rows.append(
+            {
+                "Patient ID": pid,
+                "Last HbA1c": a1c_vals[0] if isinstance(a1c_vals, list) and a1c_vals else None,
+                "Last BP": bp_vals[0] if isinstance(bp_vals, list) and bp_vals else "",
+                "Risk Level": overall_level,
+            }
+        )
+    overview_df = pd.DataFrame(overview_rows)
+    st.dataframe(overview_df, use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    st.markdown("**Select Patient to View History**")
+    selected_patient = st.selectbox("Patient ID", patients)
+
+    if not selected_patient:
+        st.info("Select a patient to view detailed history.")
+        st.stop()
+
+    history_rows = fetch_patient_history(selected_patient)
+    if not history_rows:
+        st.warning("No reports available for this patient.")
+        st.stop()
+
+    # Patient summary card (latest status)
+    latest = history_rows[-1]
+    extraction = latest.get("extraction_json") or {}
+    viz_root = latest.get("visualization_json") or {}
+    viz = (viz_root.get("visualizations") if isinstance(viz_root, dict) else None) or {}
+    diabetes = (extraction.get("diabetes") or {}) if isinstance(extraction, dict) else {}
+    bp_block = (extraction.get("blood_pressure") or {}) if isinstance(extraction, dict) else {}
+    a1c_vals = diabetes.get("a1c_values") or []
+    bp_vals = bp_block.get("bp_readings") or []
+    scores = viz.get("risk_scores") or {}
+    levels = viz.get("risk_levels") or {}
+
+    latest_a1c = a1c_vals[0] if isinstance(a1c_vals, list) and a1c_vals else None
+    latest_bp = bp_vals[0] if isinstance(bp_vals, list) and bp_vals else ""
+    diab_level = (levels.get("diabetes") or "Low").strip()
+    htn_level = (levels.get("hypertension") or "Low").strip()
+
+    risk_emoji = {"High": "🔴", "Moderate": "🟠", "Low": "🟢"}
+
+    st.markdown(f"**Patient ID:** `{selected_patient}`")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("**Latest Status**")
+        st.markdown(f"- HbA1c: {latest_a1c if latest_a1c is not None else '—'}")
+        st.markdown(f"- BP: {latest_bp or '—'}")
+    with col_b:
+        st.markdown("**Latest Risk**")
+        st.markdown(f"- Diabetes Risk: {diab_level} {risk_emoji.get(diab_level, '')}")
+        st.markdown(f"- Hypertension Risk: {htn_level} {risk_emoji.get(htn_level, '')}")
+
+    st.divider()
+
+    # Detailed patient history table + graphs using deterministic trends
+    trends_data = build_patient_trends(selected_patient)
+    t = trends_data.get("trends") or {}
+    dates = t.get("dates") or []
+    a1c = t.get("a1c") or []
+    glucose = t.get("glucose") or []
+    bp_vals = t.get("bp") or []
+    diab_risk = t.get("diabetes_risk") or []
+    htn_risk = t.get("hypertension_risk") or []
+
+    if dates:
+        pretty_dates = [str(d).split(".")[0] for d in dates]
+        st.markdown("**Patient History (All Reports)**")
+        history_df = pd.DataFrame(
+            {
+                "Date": pretty_dates,
+                "HbA1c": a1c,
+                "Glucose": glucose,
+                "BP": bp_vals,
+                "Diabetes Risk": diab_risk,
+                "Hypertension Risk": htn_risk,
+            }
+        )
+        st.dataframe(history_df, use_container_width=True, hide_index=True)
+
+        st.markdown("**HbA1c Over Time**")
+        st.line_chart(pd.DataFrame({"Date": pretty_dates, "HbA1c": a1c}).set_index("Date"))
+
+        st.markdown("**Blood Pressure (Systolic/Diastolic) Over Time**")
+        # For simplicity show BP readings as text in the table; numeric BP graphs can be added later if needed.
+
+        st.markdown("**Risk Scores Over Time**")
+        risk_chart_df = pd.DataFrame(
+            {
+                "Date": pretty_dates,
+                "Diabetes Risk": diab_risk,
+                "Hypertension Risk": htn_risk,
+            }
+        ).set_index("Date")
+        st.line_chart(risk_chart_df)
+    else:
+        st.warning("No trend data available for this patient yet.")

@@ -170,3 +170,76 @@ def fetch_patient_history(patient_id: str) -> List[Dict[str, Any]]:
         except Exception:
             pass
 
+
+def fetch_all_patients() -> List[str]:
+    """Return a sorted list of all patient_ids in the patients table."""
+    try:
+        conn = get_connection()
+    except Exception:
+        return []
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT patient_id
+                    FROM patients
+                    ORDER BY patient_id;
+                    """
+                )
+                rows = cur.fetchall() or []
+                return [r[0] for r in rows if r and r[0]]
+    except Exception as exc:
+        print(f"[DB] Failed to fetch patients: {exc}")
+        return []
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def get_patient_history(patient_id: str) -> List[Dict[str, Any]]:
+    """
+    Convenience wrapper that returns a lightweight per‑report view:
+    [
+      {
+        "date": ...,
+        "a1c": ...,
+        "glucose": ...,
+        "bp": ...,
+        "diabetes_risk": ...,
+        "hypertension_risk": ...,
+      },
+      ...
+    ]
+    """
+    rows = fetch_patient_history(patient_id)
+    history: List[Dict[str, Any]] = []
+    for row in rows:
+        created = row.get("report_created_at") or row.get("created_at")
+        extraction = row.get("extraction_json") or {}
+        viz_root = row.get("visualization_json") or {}
+        viz = (viz_root.get("visualizations") if isinstance(viz_root, dict) else None) or {}
+
+        diabetes = (extraction.get("diabetes") or {}) if isinstance(extraction, dict) else {}
+        bp_block = (extraction.get("blood_pressure") or {}) if isinstance(extraction, dict) else {}
+        a1c_vals = diabetes.get("a1c_values") or []
+        gluc_vals = diabetes.get("glucose_values") or []
+        bp_vals = bp_block.get("bp_readings") or []
+
+        scores = viz.get("risk_scores") or {}
+        history.append(
+            {
+                "date": created,
+                "a1c": (a1c_vals[0] if isinstance(a1c_vals, list) and a1c_vals else None),
+                "glucose": (gluc_vals[0] if isinstance(gluc_vals, list) and gluc_vals else None),
+                "bp": (bp_vals[0] if isinstance(bp_vals, list) and bp_vals else None),
+                "diabetes_risk": scores.get("diabetes_score"),
+                "hypertension_risk": scores.get("hypertension_score"),
+            }
+        )
+    return history
+
+

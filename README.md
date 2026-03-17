@@ -46,13 +46,20 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 - **Filter notes:** `python src/data_filter.py` — filters discharge notes to `data/filtered_discharge_notes.csv`.
 - **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`. With DB configured, each note is also stored in PostgreSQL (`patients`, `reports`, `results`).
 - **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard.
-  - **Input:** Provide a patient identifier, then paste clinical text **or** upload a file. Supported formats: **PDF** (pypdf + PyMuPDF fallback), **DOCX** (python-docx with tables + docx2txt + raw ZIP/XML fallback), **PNG/JPG** (OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract) — install Tesseract on your system for image support).
-  - The app extracts text from uploads, runs the same AI pipeline, and stores the input and outputs in PostgreSQL for that `patient_id`.
-  - View doctor/patient summaries, risk severity indicator, risk scores chart, evidence table, key clinical flags, and data gaps. Use **Download PDF Report** or **Download JSON Report** to export.
-  - For patients with multiple stored reports, the dashboard also shows **longitudinal trends**:
-    - A **trend table** with Date, HbA1c, Glucose, BP, Diabetes Risk, Hypertension Risk.
-    - **Line charts** for diabetes and hypertension risk scores over time.
-    - A deterministic **Trend Insights** section (e.g. “Diabetes control improving over recent reports”).
+  - **Pages (sidebar):**
+    - **Upload Report**: Provide a patient identifier, then paste clinical text **or** upload a file. Supported formats: **PDF** (pypdf + PyMuPDF fallback), **DOCX** (python-docx with tables + docx2txt + raw ZIP/XML fallback), **PNG/JPG** (OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract) — install Tesseract on your system for image support). The app extracts text, runs the multi‑agent pipeline, and stores inputs/outputs in PostgreSQL for that `patient_id`.
+    - **Patient Dashboard**: Admin-style view to browse all patients and their history.
+  - From the **Upload Report** page you can:
+    - View doctor/patient summaries, risk severity indicator, risk scores chart, evidence table, key clinical flags, and data gaps.
+    - Download a formatted PDF report or structured JSON report.
+    - For patients with multiple stored reports, see **longitudinal trends**:
+      - A trend table with Date, HbA1c, Glucose, BP, Diabetes Risk, Hypertension Risk.
+      - Line charts for diabetes and hypertension risk scores over time.
+      - Deterministic **overall vs recent trend insights** (e.g. “Overall: Improving ↓, Recent: Worsening ↑”).
+  - From the **Patient Dashboard** page you can:
+    - See an **All Patients Overview** table with Patient ID, last HbA1c, last BP, and overall risk level.
+    - Select any patient to view a **Patient Summary Card** (latest HbA1c, BP, diabetes and hypertension risk with colored indicators).
+    - View a full **Patient History** table (all reports) and line charts for HbA1c and risk scores over time, built purely from stored DB data (no re‑runs).
   - Activate the venv first (e.g. `.venv\Scripts\activate`) or run: `.venv\Scripts\python.exe -m streamlit run src/app.py`.
 - Set `DRY_RUN=true` in `.env` for mock outputs (no API calls).
 - **Validate vs gold standard:** `python src/validate_extraction.py` — compares extraction results to `data/gold_standard.json`.
