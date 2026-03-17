@@ -18,8 +18,23 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
    .venv\Scripts\activate   # Windows
    pip install -r requirements.txt
    ```
-2. Create a `.env` file in the project root with `GEMINI_API_KEY=your_key`. Optional: `GEMINI_MODEL`, `DRY_RUN`.
-3. For the dashboard file upload: PDF/DOCX extraction uses `pypdf`, `pymupdf`, `python-docx`, `docx2txt` (in requirements). For image (PNG/JPG) OCR, install [Tesseract](https://github.com/tesseract-ocr/tesseract) on your system. If Tesseract is not on your PATH, set `TESSERACT_CMD` in `.env` to the full path to the executable (e.g. `TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe` on Windows).
+2. Create a `.env` file in the project root with:
+   ```env
+   GEMINI_API_KEY=your_key
+   # optional
+   # GEMINI_MODEL=gemini-1.5-flash
+   # DRY_RUN=true
+   # Database password for PostgreSQL storage
+   CLINICAL_DB_PASSWORD=your_postgres_password
+   # Optional: Tesseract path when not on PATH (for image OCR in dashboard)
+   # TESSERACT_CMD=C:/Program Files/Tesseract-OCR/tesseract.exe
+   ```
+3. For the dashboard file upload: PDF/DOCX extraction uses `pypdf`, `pymupdf`, `python-docx`, `docx2txt` (in requirements). For image (PNG/JPG) OCR, install [Tesseract](https://github.com/tesseract-ocr/tesseract) on your system. If Tesseract is not on your PATH, set `TESSERACT_CMD` in `.env` to the full path or containing folder of the executable (e.g. `C:/Program Files/Tesseract-OCR` or `C:/Program Files/Tesseract-OCR/tesseract.exe` on Windows).
+4. (Optional but recommended) Initialize the PostgreSQL schema:
+   ```bash
+   # Ensure Postgres is running and clinical_ai_db exists
+   python -m db.init_db
+   ```
 
 ## Data
 
@@ -29,10 +44,15 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 ## Usage
 
 - **Filter notes:** `python src/data_filter.py` — filters discharge notes to `data/filtered_discharge_notes.csv`.
-- **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`.
+- **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`. With DB configured, each note is also stored in PostgreSQL (`patients`, `reports`, `results`).
 - **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard.
-  - **Input:** Paste clinical text **or** upload a file. Supported formats: **PDF** (pypdf + PyMuPDF fallback), **DOCX** (python-docx with tables + docx2txt + raw ZIP/XML fallback), **PNG/JPG** (OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract) — install Tesseract on your system for image support).
-  - The app extracts text from uploads, then runs the same AI pipeline. View doctor/patient summaries, risk severity, risk scores chart, evidence table, flags, and data gaps. Use **Download PDF Report** or **Download JSON Report** to export.
+  - **Input:** Provide a patient identifier, then paste clinical text **or** upload a file. Supported formats: **PDF** (pypdf + PyMuPDF fallback), **DOCX** (python-docx with tables + docx2txt + raw ZIP/XML fallback), **PNG/JPG** (OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract) — install Tesseract on your system for image support).
+  - The app extracts text from uploads, runs the same AI pipeline, and stores the input and outputs in PostgreSQL for that `patient_id`.
+  - View doctor/patient summaries, risk severity indicator, risk scores chart, evidence table, key clinical flags, and data gaps. Use **Download PDF Report** or **Download JSON Report** to export.
+  - For patients with multiple stored reports, the dashboard also shows **longitudinal trends**:
+    - A **trend table** with Date, HbA1c, Glucose, BP, Diabetes Risk, Hypertension Risk.
+    - **Line charts** for diabetes and hypertension risk scores over time.
+    - A deterministic **Trend Insights** section (e.g. “Diabetes control improving over recent reports”).
   - Activate the venv first (e.g. `.venv\Scripts\activate`) or run: `.venv\Scripts\python.exe -m streamlit run src/app.py`.
 - Set `DRY_RUN=true` in `.env` for mock outputs (no API calls).
 - **Validate vs gold standard:** `python src/validate_extraction.py` — compares extraction results to `data/gold_standard.json`.
@@ -40,7 +60,8 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 ## Project structure
 
 - `config/` — settings and extraction schema
-- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, document parser (PDF: pypdf+PyMuPDF; DOCX: python-docx+docx2txt+ZIP/XML; images: Tesseract OCR), Streamlit app (`app.py`, multimodal input + PDF/JSON report export), data filter, validator
+- `db/` — PostgreSQL connection helper, schema initializer, and query helpers (`patients`, `reports`, `results`, patient history fetch)
+- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, document parser (PDF: pypdf+PyMuPDF; DOCX: python-docx+docx2txt+ZIP/XML; images: Tesseract OCR), Streamlit app (`app.py`, multimodal input + PDF/JSON report export + longitudinal trends), trend engine (`trends.py`), data filter, validator
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files may be gitignored)
 - `.streamlit/` — Streamlit config (e.g. usage stats off)
 
