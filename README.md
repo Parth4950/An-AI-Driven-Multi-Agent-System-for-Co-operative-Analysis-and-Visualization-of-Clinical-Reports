@@ -2,6 +2,14 @@
 
 Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discharge notes for diabetes and blood pressure. **Agent 1** extracts structured facts; **Agent 2** analyzes extraction for risk insights; **Agent 3** produces doctor and patient summaries; **Agent 4** builds visualization data; **Agent 5 (Orchestrator)** runs the full pipeline. A Streamlit dashboard presents results as a clinical risk analysis UI (no raw JSON).
 
+## Features
+
+- **Multi-agent clinical reasoning**: Dedicated agents for structured extraction, risk & insight analysis, summarization, visualization, and orchestration.
+- **Deterministic visualization & trends**: Risk levels and scores derived from HbA1c and blood pressure using fixed clinical thresholds (no LLM in the visualization layer).
+- **PostgreSQL-backed patient registry**: All reports and pipeline outputs stored in `patients`, `reports`, and `results` tables for longitudinal monitoring.
+- **Longitudinal trends**: Per-patient trend analysis for HbA1c, glucose, BP, and risk scores (overall vs recent trends) computed only from stored data.
+- **Streamlit doctor dashboard**: Upload reports, review current analysis, browse all patients, and inspect historical data and trends without re-uploading notes.
+
 ## Agents
 
 - **Agent 1 — Clinical Data Extractor:** Extracts only explicitly stated diabetes and hypertension data (type, status, A1C, glucose, BP readings, medications, abnormal markers). No inference; empty when not stated.
