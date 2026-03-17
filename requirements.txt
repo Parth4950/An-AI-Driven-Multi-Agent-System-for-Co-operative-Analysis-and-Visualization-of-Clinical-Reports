@@ -10,3 +10,4 @@ python-docx
 docx2txt
 pytesseract
 Pillow
+psycopg2-binary

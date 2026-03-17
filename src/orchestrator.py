@@ -10,6 +10,7 @@ from src.extraction import run_extraction
 from src.risk_analysis import run_risk_analysis
 from src.summarizer import run_summarization
 from src.visualizer import build_visualization
+from db.queries import ensure_patient, insert_report, insert_results
 
 
 def _extract_clinical_features(input_text: str, patient_id: str = "pipeline") -> dict[str, Any]:
@@ -33,6 +34,7 @@ def _generate_summary(
 def run_pipeline(
     input_text: str,
     patient_id: str = "pipeline",
+    input_type: str = "text",
 ) -> dict[str, Any]:
     """
     Run the full clinical pipeline on one note: Agent 1 → 2 → 3 → 4.
@@ -53,6 +55,26 @@ def run_pipeline(
         risk_output,
         summary_output,
     )
+
+    # Persist to PostgreSQL (best‑effort; pipeline logic is unaffected by failures).
+    try:
+        ensure_patient(patient_id=patient_id)
+        report_id = insert_report(
+            patient_id=patient_id,
+            raw_text=input_text,
+            input_type=input_type,
+        )
+        if report_id is not None:
+            insert_results(
+                report_id=report_id,
+                extraction_output=extraction_output,
+                risk_output=risk_output,
+                summary_output=summary_output,
+                visualization_output=visualization_output,
+            )
+    except Exception as exc:
+        # Do not let DB issues break the clinical pipeline.
+        print(f"[DB] Error while storing pipeline outputs: {exc}")
 
     return {
         "extraction": extraction_output,

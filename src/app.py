@@ -26,6 +26,7 @@ from fpdf import FPDF
 
 from src.document_parser import extract_text_from_file, is_supported_file
 from src.orchestrator import run_pipeline
+from src.trends import build_patient_trends
 
 
 def _build_report_data(result):
@@ -162,7 +163,12 @@ st.divider()
 
 # ——— Section 2: Upload Clinical Report ———
 st.subheader("Upload Clinical Report")
-st.caption("Paste clinical text below **or** upload a file (PDF, DOCX, PNG, JPG).")
+st.caption("Provide a patient identifier, then paste clinical text **or** upload a file (PDF, DOCX, PNG, JPG).")
+patient_id_input = st.text_input(
+    "Patient ID",
+    value="",
+    placeholder="e.g. MRN1234 or internal patient code",
+)
 clinical_note = st.text_area(
     "Paste clinical or discharge note",
     height=200,
@@ -198,8 +204,15 @@ if run_clicked:
             st.info("Clinical text extracted successfully. Running analysis...")
         with st.spinner("Running pipeline (Extraction → Risk Analysis → Summary → Visualization)…"):
             try:
-                result = run_pipeline(clinical_text)
+                patient_id_effective = (patient_id_input or "").strip() or "unknown"
+                input_type = "text"
+                if from_file and uploaded_file is not None:
+                    input_type = (uploaded_file.name.rsplit(".", 1)[-1] or "file").lower()
+                result = run_pipeline(clinical_text, patient_id=patient_id_effective, input_type=input_type)
                 st.session_state["last_result"] = result
+                st.session_state["last_patient_id"] = patient_id_effective
+                # Build longitudinal trends from stored DB data (no re-runs).
+                st.session_state["patient_trends"] = build_patient_trends(patient_id_effective)
                 st.success("Analysis complete.")
             except Exception as e:
                 st.error(f"Pipeline failed: {e}")
@@ -215,6 +228,8 @@ if "last_result" not in st.session_state:
     st.stop()
 
 result = st.session_state["last_result"]
+patient_id_for_trends = st.session_state.get("last_patient_id", "")
+patient_trends = st.session_state.get("patient_trends")
 summary = result.get("summary") or {}
 viz = (result.get("visualizations") or {}).get("visualizations") or {}
 
@@ -313,7 +328,74 @@ if isinstance(gaps, list) and gaps:
 
 st.divider()
 
-# ——— Section 10: Download Report ———
+# ——— Section 10: Longitudinal Trends (Patient History) ———
+st.subheader("Patient Longitudinal Trends")
+if patient_trends and isinstance(patient_trends, dict):
+    t = patient_trends.get("trends") or {}
+    dates = t.get("dates") or []
+    a1c = t.get("a1c") or []
+    glucose = t.get("glucose") or []
+    bp_vals = t.get("bp") or []
+    diab_risk = t.get("diabetes_risk") or []
+    htn_risk = t.get("hypertension_risk") or []
+
+    if dates:
+        # Trend table
+        trend_df = pd.DataFrame(
+            {
+                "Date": dates,
+                "HbA1c": a1c,
+                "Glucose": glucose,
+                "BP": bp_vals,
+                "Diabetes Risk": diab_risk,
+                "Hypertension Risk": htn_risk,
+            }
+        )
+        st.markdown("**Report History (All Stored Reports for Patient)**")
+        st.dataframe(trend_df, use_container_width=True, hide_index=True)
+
+        # Line charts for risk over time
+        chart_df = pd.DataFrame(
+            {
+                "Date": dates,
+                "Diabetes Risk": diab_risk,
+                "Hypertension Risk": htn_risk,
+            }
+        ).set_index("Date")
+        st.markdown("**Risk Trends Over Time**")
+        st.line_chart(chart_df)
+
+        # Insight section
+        summary_trend = patient_trends.get("trend_summary") or {}
+        diab_label = (summary_trend.get("diabetes") or "stable").lower()
+        htn_label = (summary_trend.get("hypertension") or "stable").lower()
+
+        insight_lines = []
+        if diab_label == "improving":
+            insight_lines.append("Diabetes control **improving** over recent reports.")
+        elif diab_label == "worsening":
+            insight_lines.append("Diabetes risk is **worsening** across reports.")
+        else:
+            insight_lines.append("Diabetes risk appears **stable** across reports.")
+
+        if htn_label == "improving":
+            insight_lines.append("Hypertension control **improving** over recent reports.")
+        elif htn_label == "worsening":
+            insight_lines.append("Hypertension risk is **worsening** across reports.")
+        else:
+            insight_lines.append("Hypertension risk appears **stable** across reports.")
+
+        st.markdown("**Trend Insights**")
+        for line in insight_lines:
+            st.markdown(f"- {line}")
+    else:
+        st.caption("No stored history found for this patient yet. Trends will appear after multiple reports are stored.")
+else:
+    st.caption("Run an analysis with a patient ID to build longitudinal trends.")
+
+st.divider()
+
+# ——— Section 11: Download Report ———
 st.subheader("Download Report")
 report_data = _build_report_data(result)
 col1, col2 = st.columns(2)
