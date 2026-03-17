@@ -41,6 +41,42 @@ def _trend_label(values: List[Optional[float]]) -> str:
     return "stable"
 
 
+def _overall_and_recent(values: List[Optional[float]]) -> tuple[str, str]:
+    """
+    Compute overall (first vs last) and recent (last vs previous) trend labels.
+
+    Returns human-readable labels with arrows, e.g.:
+    - "Improving ↓"
+    - "Worsening ↑"
+    - "Stable →"
+    - "Not enough data"
+    """
+    numeric = [v for v in values if isinstance(v, (int, float))]
+    if len(numeric) < 2:
+        return "Not enough data", "Not enough data"
+    first = float(numeric[0])
+    last = float(numeric[-1])
+    # Overall: first vs last
+    if last < first:
+        overall = "Improving ↓"
+    elif last > first:
+        overall = "Worsening ↑"
+    else:
+        overall = "Stable →"
+    # Recent: last vs previous (or same as overall if only 2 points)
+    if len(numeric) == 2:
+        recent = overall
+    else:
+        prev = float(numeric[-2])
+        if last < prev:
+            recent = "Improving ↓"
+        elif last > prev:
+            recent = "Worsening ↑"
+        else:
+            recent = "Stable →"
+    return overall, recent
+
+
 def _diabetes_risk_from_a1c(a1c_value: Optional[float]) -> Optional[float]:
     """Mirror visualization risk scoring for diabetes using HbA1c."""
     if a1c_value is None:
@@ -133,10 +169,27 @@ def build_patient_trends(patient_id: str) -> Dict[str, Any]:
     diabetes_label = _trend_label(diab_risk_trend)
     hypertension_label = _trend_label(htn_risk_trend)
 
+    # Overall vs recent trends (HbA1c for diabetes, systolic BP for hypertension).
+    diab_overall, diab_recent = _overall_and_recent(a1c_trend)
+    # Derive systolic series from stored BP strings
+    systolic_series: List[Optional[float]] = []
+    for bp_str in bp_trend:
+        bp_s = (bp_str or "").strip()
+        if not bp_s or "/" not in bp_s:
+            systolic_series.append(None)
+        else:
+            part = bp_s.split("/", 1)[0].strip()
+            systolic_series.append(_parse_float(part))
+    htn_overall, htn_recent = _overall_and_recent(systolic_series)
+
     return {
         "trend_summary": {
             "diabetes": diabetes_label,
             "hypertension": hypertension_label,
+            "diabetes_overall": diab_overall,
+            "diabetes_recent": diab_recent,
+            "hypertension_overall": htn_overall,
+            "hypertension_recent": htn_recent,
         },
         "trends": {
             "dates": dates,

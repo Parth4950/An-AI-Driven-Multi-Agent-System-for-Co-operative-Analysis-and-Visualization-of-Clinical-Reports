@@ -389,19 +389,18 @@ if patient_trends and isinstance(patient_trends, dict):
 
         # Clinical Insights section
         summary_trend = patient_trends.get("trend_summary") or {}
-        diab_label = (summary_trend.get("diabetes") or "stable").lower()
-        htn_label = (summary_trend.get("hypertension") or "stable").lower()
-
-        def trend_phrase(label: str, condition: str) -> str:
-            if label == "improving":
-                return f"{condition} Trend: Improving ↓"
-            if label == "worsening":
-                return f"{condition} Trend: Worsening ↑"
-            return f"{condition} Trend: Stable"
+        diab_overall = summary_trend.get("diabetes_overall") or "Not enough data"
+        diab_recent = summary_trend.get("diabetes_recent") or "Not enough data"
+        htn_overall = summary_trend.get("hypertension_overall") or "Not enough data"
+        htn_recent = summary_trend.get("hypertension_recent") or "Not enough data"
 
         st.markdown("**Clinical Insights**")
-        st.markdown(f"- {trend_phrase(diab_label, 'Diabetes')}")
-        st.markdown(f"- {trend_phrase(htn_label, 'Hypertension')}")
+        st.markdown("**Diabetes:**")
+        st.markdown(f"- Overall Trend: {diab_overall}")
+        st.markdown(f"- Recent Trend: {diab_recent}")
+        st.markdown("**Hypertension:**")
+        st.markdown(f"- Overall Trend: {htn_overall}")
+        st.markdown(f"- Recent Trend: {htn_recent}")
     else:
         st.caption("No stored history found for this patient yet. Trends will appear after multiple reports are stored.")
 else:
