@@ -41,6 +41,38 @@ def _trend_label(values: List[Optional[float]]) -> str:
     return "stable"
 
 
+def _diabetes_risk_from_a1c(a1c_value: Optional[float]) -> Optional[float]:
+    """Mirror visualization risk scoring for diabetes using HbA1c."""
+    if a1c_value is None:
+        return None
+    if a1c_value >= 9:
+        return 0.9
+    if a1c_value >= 8:
+        return 0.75
+    if a1c_value >= 7:
+        return 0.6
+    return 0.4
+
+
+def _hypertension_risk_from_bp(bp_str: str) -> Optional[float]:
+    """Mirror visualization risk scoring for hypertension using systolic BP."""
+    bp_str = (bp_str or "").strip()
+    if not bp_str or "/" not in bp_str:
+        return None
+    systolic_part = bp_str.split("/", 1)[0].strip()
+    try:
+        systolic = int(systolic_part)
+    except ValueError:
+        return None
+    if systolic >= 180:
+        return 0.9
+    if systolic >= 160:
+        return 0.75
+    if systolic >= 140:
+        return 0.6
+    return 0.4
+
+
 def build_patient_trends(patient_id: str) -> Dict[str, Any]:
     """
     Build longitudinal trend JSON for a patient from stored DB rows.
@@ -78,9 +110,6 @@ def build_patient_trends(patient_id: str) -> Dict[str, Any]:
             dates.append("")
 
         extraction = row.get("extraction_json") or {}
-        viz_root = row.get("visualization_json") or {}
-        viz = (viz_root.get("visualizations") if isinstance(viz_root, dict) else None) or {}
-
         diabetes = (extraction.get("diabetes") or {}) if isinstance(extraction, dict) else {}
         bp = (extraction.get("blood_pressure") or {}) if isinstance(extraction, dict) else {}
 
@@ -92,12 +121,12 @@ def build_patient_trends(patient_id: str) -> Dict[str, Any]:
 
         # Blood pressure: keep the first reading as a string (e.g. "130/85")
         bp_reading = _extract_first_or_none(bp.get("bp_readings"))
-        bp_trend.append(bp_reading or "")
+        bp_str = bp_reading or ""
+        bp_trend.append(bp_str)
 
-        # Risk scores (from visualization JSON)
-        scores = viz.get("risk_scores") or {}
-        diab_score = _parse_float(scores.get("diabetes_score"))
-        htn_score = _parse_float(scores.get("hypertension_score"))
+        # Dynamic risk scores computed from stored clinical values (no LLM, no re-runs).
+        diab_score = _diabetes_risk_from_a1c(a1c_trend[-1])
+        htn_score = _hypertension_risk_from_bp(bp_str)
         diab_risk_trend.append(diab_score)
         htn_risk_trend.append(htn_score)
 

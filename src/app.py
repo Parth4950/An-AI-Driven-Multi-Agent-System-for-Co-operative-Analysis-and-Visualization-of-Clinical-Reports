@@ -328,8 +328,8 @@ if isinstance(gaps, list) and gaps:
 
 st.divider()
 
-# ——— Section 10: Longitudinal Trends (Patient History) ———
-st.subheader("Patient Longitudinal Trends")
+# ——— Section 10: Patient Trends (Longitudinal History) ———
+st.subheader("Patient Trends")
 if patient_trends and isinstance(patient_trends, dict):
     t = patient_trends.get("trends") or {}
     dates = t.get("dates") or []
@@ -340,54 +340,68 @@ if patient_trends and isinstance(patient_trends, dict):
     htn_risk = t.get("hypertension_risk") or []
 
     if dates:
-        # Trend table
+        # Format dates (remove microseconds, keep date + time if present)
+        pretty_dates = [str(d).split(".")[0] for d in dates]
+
+        # Helper to add arrows vs previous value
+        def with_trend_arrows(values):
+            out = []
+            prev = None
+            for v in values:
+                if v is None:
+                    out.append("")
+                    prev = v
+                    continue
+                arrow = ""
+                if isinstance(prev, (int, float)) and isinstance(v, (int, float)):
+                    if v < prev:
+                        arrow = " ↓"
+                    elif v > prev:
+                        arrow = " ↑"
+                out.append(f"{v}{arrow}")
+                prev = v
+            return out
+
+        # Trend table with arrows
         trend_df = pd.DataFrame(
             {
-                "Date": dates,
-                "HbA1c": a1c,
-                "Glucose": glucose,
+                "Date": pretty_dates,
+                "HbA1c": with_trend_arrows(a1c),
+                "Glucose": with_trend_arrows(glucose),
                 "BP": bp_vals,
-                "Diabetes Risk": diab_risk,
-                "Hypertension Risk": htn_risk,
+                "Diabetes Risk": with_trend_arrows(diab_risk),
+                "Hypertension Risk": with_trend_arrows(htn_risk),
             }
         )
-        st.markdown("**Report History (All Stored Reports for Patient)**")
+        st.markdown("**Report History**")
         st.dataframe(trend_df, use_container_width=True, hide_index=True)
 
         # Line charts for risk over time
         chart_df = pd.DataFrame(
             {
-                "Date": dates,
+                "Date": pretty_dates,
                 "Diabetes Risk": diab_risk,
                 "Hypertension Risk": htn_risk,
             }
         ).set_index("Date")
-        st.markdown("**Risk Trends Over Time**")
+        st.markdown("**Risk Over Time**")
         st.line_chart(chart_df)
 
-        # Insight section
+        # Clinical Insights section
         summary_trend = patient_trends.get("trend_summary") or {}
         diab_label = (summary_trend.get("diabetes") or "stable").lower()
         htn_label = (summary_trend.get("hypertension") or "stable").lower()
 
-        insight_lines = []
-        if diab_label == "improving":
-            insight_lines.append("Diabetes control **improving** over recent reports.")
-        elif diab_label == "worsening":
-            insight_lines.append("Diabetes risk is **worsening** across reports.")
-        else:
-            insight_lines.append("Diabetes risk appears **stable** across reports.")
+        def trend_phrase(label: str, condition: str) -> str:
+            if label == "improving":
+                return f"{condition} Trend: Improving ↓"
+            if label == "worsening":
+                return f"{condition} Trend: Worsening ↑"
+            return f"{condition} Trend: Stable"
 
-        if htn_label == "improving":
-            insight_lines.append("Hypertension control **improving** over recent reports.")
-        elif htn_label == "worsening":
-            insight_lines.append("Hypertension risk is **worsening** across reports.")
-        else:
-            insight_lines.append("Hypertension risk appears **stable** across reports.")
-
-        st.markdown("**Trend Insights**")
-        for line in insight_lines:
-            st.markdown(f"- {line}")
+        st.markdown("**Clinical Insights**")
+        st.markdown(f"- {trend_phrase(diab_label, 'Diabetes')}")
+        st.markdown(f"- {trend_phrase(htn_label, 'Hypertension')}")
     else:
         st.caption("No stored history found for this patient yet. Trends will appear after multiple reports are stored.")
 else:

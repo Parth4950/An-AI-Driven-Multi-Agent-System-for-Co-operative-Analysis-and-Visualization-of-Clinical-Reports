@@ -7,10 +7,21 @@ Provides a simple helper to obtain a psycopg2 connection.
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Optional
 
 import psycopg2
 from psycopg2.extensions import connection as PGConnection
+
+
+# Best-effort: load .env so CLINICAL_DB_PASSWORD and DB host/port are available
+try:
+    from dotenv import load_dotenv
+
+    _PROJECT_ROOT = Path(__file__).resolve().parents[1]
+    load_dotenv(_PROJECT_ROOT / ".env")
+except Exception:
+    pass
 
 
 def get_connection(password: Optional[str] = None) -> PGConnection:

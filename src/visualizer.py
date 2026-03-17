@@ -4,12 +4,77 @@ Converts extraction + risk_analysis + summary into visualization-ready JSON.
 Deterministic: no new analysis, no LLM. For frontend gauges, bar charts, evidence tables.
 """
 
-from typing import Any
+from typing import Any, Optional
+
+
+def _parse_float(value: Any) -> Optional[float]:
+    try:
+        if value is None:
+            return None
+        return float(str(value))
+    except (TypeError, ValueError):
+        return None
 
 
 def _level_to_score(level: str) -> float:
-    """Map risk level to 0-1 score for charts."""
+    """Fallback mapping of risk level to 0-1 score for charts."""
     return {"High": 0.85, "Moderate": 0.55, "Low": 0.25}.get(level, 0.0)
+
+
+def _diabetes_risk_from_a1c(extraction: dict[str, Any]) -> Optional[float]:
+    """
+    Compute diabetes risk score from HbA1c using deterministic thresholds:
+    - a1c >= 9   -> 0.9
+    - a1c >= 8   -> 0.75
+    - a1c >= 7   -> 0.6
+    - else       -> 0.4
+    Returns None if no numeric HbA1c is available.
+    """
+    diabetes = (extraction or {}).get("diabetes") or {}
+    vals = diabetes.get("a1c_values") or []
+    if not isinstance(vals, list) or not vals:
+        return None
+    first = _parse_float(vals[0])
+    if first is None:
+        return None
+    a1c = first
+    if a1c >= 9:
+        return 0.9
+    if a1c >= 8:
+        return 0.75
+    if a1c >= 7:
+        return 0.6
+    return 0.4
+
+
+def _hypertension_risk_from_bp(extraction: dict[str, Any]) -> Optional[float]:
+    """
+    Compute hypertension risk score from systolic blood pressure using deterministic thresholds:
+    - systolic >= 180 -> 0.9
+    - systolic >= 160 -> 0.75
+    - systolic >= 140 -> 0.6
+    - else            -> 0.4
+    Returns None if no parsable BP reading is available.
+    """
+    bp_block = (extraction or {}).get("blood_pressure") or {}
+    readings = bp_block.get("bp_readings") or []
+    if not isinstance(readings, list) or not readings:
+        return None
+    raw = str(readings[0] or "").strip()
+    if not raw or "/" not in raw:
+        return None
+    systolic_str = raw.split("/", 1)[0].strip()
+    try:
+        systolic = int(systolic_str)
+    except ValueError:
+        return None
+    if systolic >= 180:
+        return 0.9
+    if systolic >= 160:
+        return 0.75
+    if systolic >= 140:
+        return 0.6
+    return 0.4
 
 
 def _confidence_to_level(confidence: str, insight_count: int) -> str:
@@ -90,6 +155,14 @@ def build_visualization(
 
     level_overall, color = _overall_severity(hypertension_level, diabetes_level)
 
+    # Dynamic risk scores based on actual clinical values (with level-based fallback).
+    diabetes_score = _diabetes_risk_from_a1c(extraction)
+    if diabetes_score is None:
+        diabetes_score = _level_to_score(diabetes_level)
+    hypertension_score = _hypertension_risk_from_bp(extraction)
+    if hypertension_score is None:
+        hypertension_score = _level_to_score(hypertension_level)
+
     evidence_chart = _build_evidence_chart(extraction, risk)
 
     return {
@@ -99,8 +172,8 @@ def build_visualization(
                 "diabetes": diabetes_level,
             },
             "risk_scores": {
-                "hypertension_score": round(_level_to_score(hypertension_level), 2),
-                "diabetes_score": round(_level_to_score(diabetes_level), 2),
+                "hypertension_score": round(float(hypertension_score), 2),
+                "diabetes_score": round(float(diabetes_score), 2),
             },
             "severity_indicator": {
                 "level": level_overall,
