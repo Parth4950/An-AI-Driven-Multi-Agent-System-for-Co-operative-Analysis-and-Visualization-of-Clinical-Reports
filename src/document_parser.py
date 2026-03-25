@@ -151,7 +151,8 @@ def _run_tesseract_subprocess(tesseract_cmd: str, image_path: str) -> tuple[Opti
     try:
         # Use "-" so tesseract writes text to stdout
         result = subprocess.run(
-            [tesseract_cmd, image_path, "-", "quiet"],
+            # psm 6 works well for screenshots / uniform blocks of text
+            [tesseract_cmd, image_path, "-", "--psm", "6", "quiet"],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -192,10 +193,27 @@ def extract_text_from_image(file_bytes: bytes) -> tuple[Optional[str], Optional[
     if tesseract_cmd and os.path.isfile(tesseract_cmd):
         # Prefer subprocess so we don't rely on pytesseract finding the executable
         suffix = ".png"
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-            tmp.write(file_bytes)
-            tmp.flush()
-            tmp_path = tmp.name
+        tmp_path = None
+        try:
+            from PIL import Image, ImageEnhance, ImageOps
+            img = Image.open(io.BytesIO(file_bytes))
+            # Normalize: grayscale, auto-contrast, and upscale for better OCR on screenshots
+            img = ImageOps.grayscale(img)
+            img = ImageOps.autocontrast(img)
+            img = ImageEnhance.Contrast(img).enhance(1.6)
+            w, h = img.size
+            if w and h and (w < 1600 or h < 900):
+                scale = 2
+                img = img.resize((w * scale, h * scale))
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                tmp_path = tmp.name
+            img.save(tmp_path, format="PNG")
+        except Exception:
+            # Fallback to raw bytes if PIL preprocessing fails
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                tmp.write(file_bytes)
+                tmp.flush()
+                tmp_path = tmp.name
         try:
             text, err = _run_tesseract_subprocess(tesseract_cmd, tmp_path)
             if text:
@@ -208,7 +226,8 @@ def extract_text_from_image(file_bytes: bytes) -> tuple[Optional[str], Optional[
                 )
         finally:
             try:
-                os.unlink(tmp_path)
+                if tmp_path:
+                    os.unlink(tmp_path)
             except Exception:
                 pass
     elif tesseract_cmd:

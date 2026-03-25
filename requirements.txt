@@ -11,3 +11,6 @@ docx2txt
 pytesseract
 Pillow
 psycopg2-binary
+fastapi
+uvicorn[standard]
+requests
