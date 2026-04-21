@@ -32,32 +32,52 @@ from src.document_parser import extract_text_from_file, is_supported_file
 API_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://127.0.0.1:8000")
 
 
-def _api_post_analyze(patient_id: str, text: str) -> dict:
-    resp = requests.post(
-        f"{API_BASE_URL}/analyze/",
-        json={"patient_id": patient_id, "text": text},
-        timeout=120,
+def _backend_error_message(exc: Exception) -> str:
+    """Create a user-friendly backend connectivity message."""
+    return (
+        f"Could not connect to FastAPI backend at {API_BASE_URL}. "
+        "Start the API server with: `uvicorn backend.main:app --reload`."
     )
-    resp.raise_for_status()
-    return resp.json()
+
+
+def _api_post_analyze(patient_id: str, text: str) -> dict:
+    try:
+        resp = requests.post(
+            f"{API_BASE_URL}/analyze/",
+            json={"patient_id": patient_id, "text": text},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json()
+    except requests.RequestException as exc:
+        raise RuntimeError(_backend_error_message(exc)) from exc
 
 
 def _api_get_patients() -> list[str]:
-    resp = requests.get(f"{API_BASE_URL}/patients/", timeout=30)
-    resp.raise_for_status()
-    return resp.json().get("patient_ids") or []
+    try:
+        resp = requests.get(f"{API_BASE_URL}/patients/", timeout=30)
+        resp.raise_for_status()
+        return resp.json().get("patient_ids") or []
+    except requests.RequestException as exc:
+        raise RuntimeError(_backend_error_message(exc)) from exc
 
 
 def _api_get_patient_history(patient_id: str) -> list[dict]:
-    resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}", timeout=30)
-    resp.raise_for_status()
-    return resp.json() or []
+    try:
+        resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}", timeout=30)
+        resp.raise_for_status()
+        return resp.json() or []
+    except requests.RequestException as exc:
+        raise RuntimeError(_backend_error_message(exc)) from exc
 
 
 def _api_get_patient_trends(patient_id: str) -> dict:
-    resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}/trends", timeout=30)
-    resp.raise_for_status()
-    return resp.json() or {}
+    try:
+        resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}/trends", timeout=30)
+        resp.raise_for_status()
+        return resp.json() or {}
+    except requests.RequestException as exc:
+        raise RuntimeError(_backend_error_message(exc)) from exc
 
 
 def _build_report_data(result):
@@ -345,7 +365,6 @@ if page == "📤 Upload Report":
                     st.success("Analysis complete.")
                 except Exception as e:
                     st.error(f"Pipeline failed: {e}")
-                    st.exception(e)
                     if "last_result" in st.session_state:
                         del st.session_state["last_result"]
                     progress.progress(0)
@@ -561,7 +580,12 @@ else:
     # ——— Patient Dashboard / Admin view ———
     st.subheader("Patient Dashboard")
 
-    patients = _api_get_patients()
+    try:
+        patients = _api_get_patients()
+    except RuntimeError as e:
+        st.error(str(e))
+        st.info("Run this in another terminal:\n\n`uvicorn backend.main:app --reload`")
+        st.stop()
     if not patients:
         st.info("No patients found in the database yet. Upload a report to create patient records.")
         st.stop()
