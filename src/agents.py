@@ -3,6 +3,8 @@ CrewAI agents for clinical extraction.
 STRICT extractor: extract only. Never analyze, predict, or summarize.
 """
 
+from functools import lru_cache
+
 from crewai import Agent
 
 from config.schema import EXTRACTION_SCHEMA
@@ -56,6 +58,7 @@ OUTPUT THE JSON OBJECT AND STOP."""
 EXTRACTOR_BACKSTORY = "You extract only. You never analyze, predict, or summarize. Output exactly one JSON object. No markdown."
 
 
+@lru_cache(maxsize=1)
 def get_extractor_agent() -> Agent:
     """Build the Extractor Agent (Diabetes + Blood Pressure) using CrewAI native Gemini."""
     validate_settings()
@@ -142,6 +145,7 @@ If nothing meaningful can be summarized, return empty strings and empty arrays. 
 SUMMARIZER_BACKSTORY = "You summarize only what Agents 1 and 2 provided. You do not add, infer, or advise. You output one JSON object with doctor_summary, patient_summary, key_flags, data_gaps."
 
 
+@lru_cache(maxsize=1)
 def get_summarizer_agent() -> Agent:
     """Build Agent 3: Clinical Summarizer (consumes Agent 1 + Agent 2 JSON)."""
     validate_settings()
