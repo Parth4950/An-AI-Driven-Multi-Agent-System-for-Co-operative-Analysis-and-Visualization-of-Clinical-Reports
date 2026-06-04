@@ -3,21 +3,21 @@
     "patient_id": "10000032",
     "visualizations": {
       "risk_levels": {
-        "hypertension": "Moderate",
-        "diabetes": "Moderate"
+        "hypertension": "Low",
+        "diabetes": "Low"
       },
       "risk_scores": {
-        "hypertension_score": 0.55,
-        "diabetes_score": 0.55
+        "hypertension_score": 0.25,
+        "diabetes_score": 0.25
       },
       "severity_indicator": {
-        "level": "Moderate",
-        "color": "orange"
+        "level": "Low",
+        "color": "green"
       },
       "evidence_chart": [
         {
           "label": "Lab",
-          "value": "GLUCOSE-109*"
+          "value": "Glucose-109*"
         }
       ]
     }
@@ -60,15 +60,15 @@
         },
         {
           "label": "Vital",
-          "value": "125/55"
+          "value": "BP: 125/55"
         },
         {
           "label": "Vital",
-          "value": "140/77"
+          "value": "BP: 140/77"
         },
         {
           "label": "Vital",
-          "value": "142/65"
+          "value": "BP: 142/65"
         }
       ]
     }
@@ -77,16 +77,16 @@
     "patient_id": "10000826",
     "visualizations": {
       "risk_levels": {
-        "hypertension": "Moderate",
-        "diabetes": "Moderate"
+        "hypertension": "High",
+        "diabetes": "High"
       },
       "risk_scores": {
-        "hypertension_score": 0.55,
-        "diabetes_score": 0.55
+        "hypertension_score": 0.85,
+        "diabetes_score": 0.85
       },
       "severity_indicator": {
-        "level": "Moderate",
-        "color": "orange"
+        "level": "High",
+        "color": "red"
       },
       "evidence_chart": [
         {
@@ -172,23 +172,23 @@
         },
         {
           "label": "Lab",
-          "value": "A1c-8.1"
+          "value": "%HbA1c-8.1*"
         },
         {
           "label": "Lab",
-          "value": "Glucose-138"
+          "value": "Glucose-138*"
         },
         {
           "label": "Lab",
-          "value": "Glucose-150"
+          "value": "Glucose-150*"
         },
         {
           "label": "Lab",
-          "value": "eAG-186"
+          "value": "eAG-186*"
         },
         {
           "label": "Vital",
-          "value": "BP-200/103"
+          "value": "200/103"
         }
       ]
     }
