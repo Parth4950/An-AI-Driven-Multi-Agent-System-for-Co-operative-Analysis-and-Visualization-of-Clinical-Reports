@@ -8,7 +8,7 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 - **Deterministic visualization & trends**: Risk levels and scores derived from HbA1c and blood pressure using fixed clinical thresholds (no LLM in the visualization layer).
 - **PostgreSQL-backed patient registry**: All reports and pipeline outputs stored in `patients`, `reports`, and `results` tables for longitudinal monitoring.
 - **Longitudinal trends**: Per-patient trend analysis for HbA1c, glucose, BP, and risk scores (overall vs recent trends) computed only from stored data.
-- **Streamlit doctor dashboard**: Upload reports, review current analysis, browse all patients, and inspect historical data and trends without re-uploading notes.
+- **Monolithic Streamlit dashboard**: Upload reports, run the multi-agent pipeline in-process (no separate API server), browse all patients, and inspect historical data and trends without re-uploading notes. Suitable for **Streamlit Community Cloud** deployment.
 
 ## Agents
 
@@ -53,7 +53,7 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 
 - **Filter notes:** `python src/data_filter.py` — filters discharge notes to `data/filtered_discharge_notes.csv`.
 - **Run pipeline (CLI):** `python src/main.py` — runs the Orchestrator (Agent 5) on each filtered note. Writes `data/extraction_results.json`, `data/risk_insights.json`, `data/summaries.json`, `data/visualizations.json`. With DB configured, each note is also stored in PostgreSQL (`patients`, `reports`, `results`).
-- **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard.
+- **Run dashboard:** `streamlit run src/app.py` — opens the Clinical Risk Analysis Dashboard (calls the orchestrator and PostgreSQL directly; no FastAPI/Uvicorn process required).
   - **Pages (sidebar):**
     - **Upload Report**: Provide a patient identifier, then paste clinical text **or** upload a file. Supported formats: **PDF** (pypdf + PyMuPDF fallback), **DOCX** (python-docx with tables + docx2txt + raw ZIP/XML fallback), **PNG/JPG** (OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract) — install Tesseract on your system for image support). The app extracts text, runs the multi‑agent pipeline, and stores inputs/outputs in PostgreSQL for that `patient_id`.
     - **Patient Dashboard**: Admin-style view to browse all patients and their history.
@@ -76,9 +76,21 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 
 - `config/` — settings and extraction schema
 - `db/` — PostgreSQL connection helper, schema initializer, and query helpers (`patients`, `reports`, `results`, patient history fetch)
-- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, document parser (PDF: pypdf+PyMuPDF; DOCX: python-docx+docx2txt+ZIP/XML; images: Tesseract OCR), Streamlit app (`app.py`, multimodal input + PDF/JSON report export + longitudinal trends), trend engine (`trends.py`), data filter, validator
+- `src/` — agents (extractor, risk analyzer, summarizer, visualizer, orchestrator), tasks, pipeline runners, `clinical_services.py` (Streamlit-facing DB/pipeline helpers with caching), document parser (PDF: pypdf+PyMuPDF; DOCX: python-docx+docx2txt+ZIP/XML; images: Tesseract OCR), Streamlit app (`app.py`, multimodal input + PDF/JSON report export + longitudinal trends), trend engine (`trends.py`), data filter, validator
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files may be gitignored)
 - `.streamlit/` — Streamlit config (e.g. usage stats off)
+
+## Streamlit Community Cloud
+
+1. Set **Main file path** to `src/app.py`.
+2. Add secrets in the app settings (same keys as `.env`):
+   - `GEMINI_API_KEY`
+   - `CLINICAL_DB_PASSWORD`
+   - Optional: `CLINICAL_DB_HOST`, `CLINICAL_DB_PORT`, `GEMINI_MODEL`, `DRY_RUN`, `TESSERACT_CMD`
+3. Use a hosted PostgreSQL instance reachable from Streamlit Cloud; run `python -m db.init_db` against that database once.
+4. Image OCR (PNG/JPG) requires Tesseract on the build image — PDF/DOCX and pasted text work without it.
+
+No separate FastAPI or Uvicorn process is required.
 
 ## Repository
 
