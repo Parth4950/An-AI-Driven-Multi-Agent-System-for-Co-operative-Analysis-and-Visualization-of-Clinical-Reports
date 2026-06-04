@@ -23,61 +23,17 @@ os.environ.setdefault("CREWAI_DISABLE_TELEMETRY", "true")
 import pandas as pd
 import streamlit as st
 import altair as alt
-import requests
 from fpdf import FPDF
 
+from src.clinical_services import (
+    bootstrap_clinical_app,
+    invalidate_patient_data_cache,
+    load_all_patient_ids,
+    load_patient_history,
+    load_patient_trends,
+    run_clinical_analysis,
+)
 from src.document_parser import extract_text_from_file, is_supported_file
-
-# FastAPI backend base URL
-API_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://127.0.0.1:8000")
-
-
-def _backend_error_message(exc: Exception) -> str:
-    """Create a user-friendly backend connectivity message."""
-    return (
-        f"Could not connect to FastAPI backend at {API_BASE_URL}. "
-        "Start the API server with: `uvicorn backend.main:app --reload`."
-    )
-
-
-def _api_post_analyze(patient_id: str, text: str) -> dict:
-    try:
-        resp = requests.post(
-            f"{API_BASE_URL}/analyze/",
-            json={"patient_id": patient_id, "text": text},
-            timeout=120,
-        )
-        resp.raise_for_status()
-        return resp.json()
-    except requests.RequestException as exc:
-        raise RuntimeError(_backend_error_message(exc)) from exc
-
-
-def _api_get_patients() -> list[str]:
-    try:
-        resp = requests.get(f"{API_BASE_URL}/patients/", timeout=30)
-        resp.raise_for_status()
-        return resp.json().get("patient_ids") or []
-    except requests.RequestException as exc:
-        raise RuntimeError(_backend_error_message(exc)) from exc
-
-
-def _api_get_patient_history(patient_id: str) -> list[dict]:
-    try:
-        resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}", timeout=30)
-        resp.raise_for_status()
-        return resp.json() or []
-    except requests.RequestException as exc:
-        raise RuntimeError(_backend_error_message(exc)) from exc
-
-
-def _api_get_patient_trends(patient_id: str) -> dict:
-    try:
-        resp = requests.get(f"{API_BASE_URL}/patients/{patient_id}/trends", timeout=30)
-        resp.raise_for_status()
-        return resp.json() or {}
-    except requests.RequestException as exc:
-        raise RuntimeError(_backend_error_message(exc)) from exc
 
 
 def _build_report_data(result):
@@ -206,12 +162,7 @@ def _build_pdf_bytes(report):
     return buf.getvalue()
 
 st.set_page_config(page_title="Clinical Risk Analysis Dashboard", layout="wide")
-
-# Force clear any cached data/state to avoid stale UI issues.
-try:
-    st.cache_data.clear()
-except Exception:
-    pass
+bootstrap_clinical_app()
 
 # --- Safe UI CSS ---
 st.markdown(
@@ -355,12 +306,15 @@ if page == "📤 Upload Report":
                     input_type = "text"
                     if from_file and uploaded_file is not None:
                         input_type = (uploaded_file.name.rsplit(".", 1)[-1] or "file").lower()
-                    # Pipeline call goes through FastAPI (no AI logic inside Streamlit).
-                    result = _api_post_analyze(patient_id_effective, clinical_text)
+                    result = run_clinical_analysis(
+                        patient_id_effective,
+                        clinical_text,
+                        input_type=input_type,
+                    )
                     st.session_state["last_result"] = result
                     st.session_state["last_patient_id"] = patient_id_effective
-                    # Build longitudinal trends from stored DB data (no re-runs).
-                    st.session_state["patient_trends"] = _api_get_patient_trends(patient_id_effective)
+                    invalidate_patient_data_cache(patient_id_effective)
+                    st.session_state["patient_trends"] = load_patient_trends(patient_id_effective)
                     progress.progress(100)
                     st.success("Analysis complete.")
                 except Exception as e:
@@ -581,10 +535,9 @@ else:
     st.subheader("Patient Dashboard")
 
     try:
-        patients = _api_get_patients()
+        patients = load_all_patient_ids()
     except RuntimeError as e:
         st.error(str(e))
-        st.info("Run this in another terminal:\n\n`uvicorn backend.main:app --reload`")
         st.stop()
     if not patients:
         st.info("No patients found in the database yet. Upload a report to create patient records.")
@@ -595,7 +548,7 @@ else:
     # Build latest snapshot per patient (for the card grid)
     overview_rows = []
     for pid in patients:
-        history_rows = _api_get_patient_history(pid)
+        history_rows = load_patient_history(pid)
         if not history_rows:
             overview_rows.append(
                 {
@@ -666,7 +619,7 @@ else:
         st.info("Select a patient to view detailed history.")
         st.stop()
 
-    history_rows = _api_get_patient_history(selected_patient)
+    history_rows = load_patient_history(selected_patient)
     if not history_rows:
         st.warning("No reports available for this patient.")
         st.stop()
@@ -718,7 +671,7 @@ else:
     st.divider()
 
     # Detailed patient history table + upgraded graphs using deterministic trends
-    trends_data = _api_get_patient_trends(selected_patient)
+    trends_data = load_patient_trends(selected_patient)
     t = trends_data.get("trends") or {}
     dates = t.get("dates") or []
     a1c = t.get("a1c") or []
