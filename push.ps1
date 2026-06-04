@@ -1,4 +1,4 @@
-# Push to GitHub using full path to Git (use when 'git' is not in PATH)
+    # Push to GitHub using full path to Git (use when 'git' is not in PATH)
 $git = "C:\Program Files\Git\bin\git.exe"
 Set-Location $PSScriptRoot
 # Remove stale lock files from interrupted git runs
