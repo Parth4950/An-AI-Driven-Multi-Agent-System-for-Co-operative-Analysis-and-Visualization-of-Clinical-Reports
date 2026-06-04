@@ -14,7 +14,7 @@
       "medications": []
     },
     "abnormal_markers": [
-      "GLUCOSE-109*"
+      "Glucose-109*"
     ]
   },
   {
@@ -34,9 +34,7 @@
         "142/65"
       ],
       "medications": [
-        "metoprolol tartrate 50 mg po tid",
-        "metoprolol tartrate 50mg",
-        "metoprolol tartrate 75 mg po tid"
+        "metoprolol tartrate"
       ]
     },
     "abnormal_markers": [
@@ -112,10 +110,12 @@
         "hydralazine",
         "hydrochlorothiazide",
         "lisinopril",
+        "metoprolol",
         "nifedipine"
       ]
     },
     "abnormal_markers": [
+      "%HbA1c-8.1*",
       "Glucose-138*",
       "Glucose-150*",
       "eAG-186*"
