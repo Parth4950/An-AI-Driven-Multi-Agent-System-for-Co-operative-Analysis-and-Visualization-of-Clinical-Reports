@@ -2,6 +2,8 @@
 Gemini LLM instance for CrewAI agents.
 """
 
+from functools import lru_cache
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from config.settings import (
@@ -12,6 +14,7 @@ from config.settings import (
 )
 
 
+@lru_cache(maxsize=1)
 def get_gemini_llm() -> ChatGoogleGenerativeAI:
     """Create and return ChatGoogleGenerativeAI for CrewAI. Loads API key from .env."""
     validate_settings()
