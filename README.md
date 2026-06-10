@@ -80,15 +80,20 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 - `data/` — inputs and outputs (CSV/JSON; large or sensitive files may be gitignored)
 - `.streamlit/` — Streamlit config (e.g. usage stats off)
 
+## Live demo
+
+- **Streamlit app:** [smart-clinical-report-analyze.streamlit.app](https://smart-clinical-report-analyze.streamlit.app)
+
 ## Streamlit Community Cloud
 
 1. Set **Main file path** to `src/app.py`.
-2. Add secrets in the app settings (same keys as `.env`):
+2. Set **Python version** to **3.12** (required — CrewAI/ChromaDB fail on Python 3.14 with `chroma_server_nofile`).
+3. Add secrets in the app settings (same keys as `.env`):
    - `GEMINI_API_KEY`
    - `CLINICAL_DB_PASSWORD`
    - Optional: `CLINICAL_DB_HOST`, `CLINICAL_DB_PORT`, `GEMINI_MODEL`, `DRY_RUN`, `TESSERACT_CMD`
-3. Use a hosted PostgreSQL instance reachable from Streamlit Cloud; run `python -m db.init_db` against that database once.
-4. Image OCR (PNG/JPG) requires Tesseract on the build image — PDF/DOCX and pasted text work without it.
+4. Use a hosted PostgreSQL instance reachable from Streamlit Cloud; run `python -m db.init_db` against that database once.
+5. Image OCR (PNG/JPG) requires Tesseract on the build image — PDF/DOCX and pasted text work without it.
 
 No separate FastAPI or Uvicorn process is required.
 
