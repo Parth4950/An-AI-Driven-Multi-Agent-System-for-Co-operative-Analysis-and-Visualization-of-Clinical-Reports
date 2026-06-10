@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 import streamlit as st
 
 from config.settings import validate_settings
+from src.runtime_compat import check_runtime_compatibility
 
 
 def _db_error_message(exc: Exception) -> str:
@@ -51,6 +52,10 @@ def run_clinical_analysis(
     Not cached — each note is unique.
     """
     bootstrap_clinical_app()
+    compat_error = check_runtime_compatibility()
+    if compat_error:
+        raise RuntimeError(compat_error)
+
     from src.orchestrator import run_pipeline
 
     try:
