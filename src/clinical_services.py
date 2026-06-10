@@ -27,8 +27,13 @@ def _db_error_message(exc: Exception) -> str:
 def _analysis_error_message(exc: Exception) -> str:
     msg = str(exc).strip() or exc.__class__.__name__
     upper = msg.upper()
-    if "GEMINI" in upper or "API_KEY" in upper or "GOOGLE" in upper:
-        return f"LLM configuration error: {msg}. Set `GEMINI_API_KEY` in `.env`."
+    if "GEMINI" in upper or "API_KEY" in upper or "GOOGLE" in upper or "INVALID_ARGUMENT" in upper:
+        return (
+            f"LLM configuration error: {msg}. "
+            "Add a valid `GEMINI_API_KEY` from https://aistudio.google.com/apikey — "
+            "locally in `.env`, or on Streamlit Cloud under Manage app → Settings → Secrets, "
+            "then reboot the app."
+        )
     if "connect" in msg.lower() or "postgresql" in msg.lower() or "CLINICAL_DB" in upper:
         return _db_error_message(exc)
     return f"Clinical analysis failed: {msg}"
