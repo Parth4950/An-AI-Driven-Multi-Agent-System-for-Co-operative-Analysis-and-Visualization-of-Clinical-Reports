@@ -15,6 +15,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 # Load .env so TESSERACT_CMD and other vars are available (e.g. for document_parser)
 import os
+import importlib
 from dotenv import load_dotenv
 load_dotenv(_PROJECT_ROOT / ".env")
 # Disable CrewAI telemetry to avoid "signal only works in main thread" when run under Streamlit
@@ -24,6 +25,12 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 from fpdf import FPDF
+
+from config.streamlit_env import apply_streamlit_secrets
+
+apply_streamlit_secrets(st.secrets)
+import config.settings as _settings
+importlib.reload(_settings)
 
 from src.clinical_services import (
     bootstrap_clinical_app,
