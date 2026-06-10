@@ -44,5 +44,8 @@ def validate_settings() -> None:
         return
     if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
         raise ValueError(
-            "GEMINI_API_KEY is not set or is placeholder. Set it in .env (or use DRY_RUN=true for mock mode)"
+            "GEMINI_API_KEY is not set or is placeholder. "
+            "Locally: set it in `.env`. On Streamlit Cloud: add it under "
+            "Manage app → Settings → Secrets (e.g. GEMINI_API_KEY = \"your-key\"). "
+            "Or use DRY_RUN=true for mock mode."
         )
