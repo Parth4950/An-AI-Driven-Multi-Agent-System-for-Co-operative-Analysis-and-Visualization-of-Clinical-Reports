@@ -88,10 +88,18 @@ Multi-agent clinical pipeline using CrewAI and Gemini: processes MIMIC-IV discha
 
 1. Set **Main file path** to `src/app.py`.
 2. Set **Python version** to **3.12** (required — CrewAI/ChromaDB fail on Python 3.14 with `chroma_server_nofile`).
-3. Add secrets in the app settings (same keys as `.env`):
-   - `GEMINI_API_KEY`
-   - `CLINICAL_DB_PASSWORD`
-   - Optional: `CLINICAL_DB_HOST`, `CLINICAL_DB_PORT`, `GEMINI_MODEL`, `DRY_RUN`, `TESSERACT_CMD`
+3. Add secrets in the app settings (**Manage app → Settings → Secrets**). Example `secrets.toml` content:
+
+   ```toml
+   GEMINI_API_KEY = "your_google_ai_studio_key"
+   CLINICAL_DB_PASSWORD = "your_postgres_password"
+   # optional
+   CLINICAL_DB_HOST = "your-db-host.example.com"
+   CLINICAL_DB_PORT = "5432"
+   GEMINI_MODEL = "gemini-2.5-flash"
+   ```
+
+   Get a Gemini key at [Google AI Studio](https://aistudio.google.com/apikey). Reboot the app after saving secrets.
 4. Use a hosted PostgreSQL instance reachable from Streamlit Cloud; run `python -m db.init_db` against that database once.
 5. Image OCR (PNG/JPG) requires Tesseract on the build image — PDF/DOCX and pasted text work without it.
 
